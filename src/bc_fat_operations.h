@@ -14,5 +14,7 @@
 #ifndef BC_FAT_OPERATIONS
 #define BC_FAT_OPERATIONS
 
+ size_t getFATEntry(FILE **virDrive, size_t entryNum);
+ void setFATEntry(FILE **virDrive, size_t entryNum, size_t value);
 
 #endif

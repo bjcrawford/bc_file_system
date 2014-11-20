@@ -11,3 +11,20 @@
 */
 
 #include "bc_fat_operations.h"
+
+ size_t getFATEntry(FILE **virDrive, size_t entryNum)
+ {
+ 	size_t loc = 0;
+ 	loc += getBytesPerSector(virDrive);
+ 	loc += entryNum * 4;
+
+ 	return readNum(virDrive, loc, 4);
+ }
+
+ void setFATEntry(FILE **virDrive, size_t entryNum, size_t value)
+ {
+ 	size_t loc = 0;
+ 	loc += getBytesPerSector(virDrive);
+ 	loc += entryNum * 4;
+ 	writeNum(virDrive, loc, 4, value);
+ }

@@ -12,7 +12,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "bc_drive_operations.h"
 
 #ifndef BC_BOOT_SEC_OPERATIONS
 #define BC_BOOT_SEC_OPERATIONS

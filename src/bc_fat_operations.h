@@ -15,6 +15,9 @@
 #define BC_FAT_OPERATIONS
 
  size_t getFATEntry(FILE **virDrive, size_t entryNum);
+ size_t getFATStartLocation(FILE **virDrive);
  void setFATEntry(FILE **virDrive, size_t entryNum, size_t value);
+ size_t addClusterToChain(FILE **virDrive, size_t entryNum);
+void findAndSetNextFreeCluster(FILE **virDrive);
 
 #endif

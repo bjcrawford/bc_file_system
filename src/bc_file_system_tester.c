@@ -31,6 +31,7 @@
  	fprintf(stdout, "Initialized: %zu\n", getInitialized(&vd));
  	fprintf(stdout, "Drive Label: %s\n", getDriveLabel(&vd));
  	fprintf(stdout, "Bytes Per Sector: %zu\n", getBytesPerSector(&vd));
+ 	fprintf(stdout, "Sectors Per Cluster: %zu\n", getSectorsPerCluster(&vd));
  	fprintf(stdout, "Number Of Reserved Sectors: %zu\n", getNumberOfReservedSectors(&vd));
  	fprintf(stdout, "Number Of Sectors On Drive: %zu\n", getNumberOfSectorsOnDrive(&vd));
  	fprintf(stdout, "Number Of Sectors Per FAT: %zu\n", getNumberOfSectorsPerFAT(&vd));

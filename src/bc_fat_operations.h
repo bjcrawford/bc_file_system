@@ -1,5 +1,5 @@
 /**
- * @file bc_file_system.h
+ * @file bc_fat_operations.h
  * @author Brett Crawford
  * @brief Constructing a File System and the Related IOCS Functions
  * @details
@@ -10,13 +10,9 @@
  *  Description: This program was written for use in Linux.
 */
 
-#include "bc_drive_operations.h"
-#include "bc_boot_sec_operations.h"
 
-#ifndef BC_FILE_SYSTEM
-#define BC_FILE_SYSTEM
-
-
+#ifndef BC_FAT_OPERATIONS
+#define BC_FAT_OPERATIONS
 
 
 #endif

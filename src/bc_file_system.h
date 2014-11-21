@@ -10,11 +10,13 @@
  *  Description: This program was written for use in Linux.
 */
 
-#include "bc_drive_operations.h"
-#include "bc_boot_sec_operations.h"
 
 #ifndef BC_FILE_SYSTEM
 #define BC_FILE_SYSTEM
+
+#include "bc_drive_operations.h"
+#include "bc_boot_sec_operations.h"
+#include "bc_dir_operations.h"
 
 
 

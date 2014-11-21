@@ -25,8 +25,7 @@
  		fprintf(stderr, "Error opening drive");
  	fprintf(stdout, "VDrive Opened\n");
 
- 	//formatVirDrive(&vd);
- 	initBootSector(&vd, "VDrive");
+ 	initVirDrive(&vd, "VDrive");
 
  	fprintf(stdout, "Initialized: %zu\n", getInitialized(&vd));
  	fprintf(stdout, "Drive Label: %s\n", getDriveLabel(&vd));
@@ -39,6 +38,18 @@
  	fprintf(stdout, "Number Of Free Clusters: %zu\n", getNumberOfFreeClusters(&vd));
  	fprintf(stdout, "Next Free Cluster: %zu\n", getNextFreeCluster(&vd));
  	fprintf(stdout, "Size Of Drive: %zu\n", getSizeOfDrive(&vd));
+
+ 	createDirEntry(&vd, getFirstClusterOfRootDir(&vd), 0x3, "testfile", "txt");
+
+ 	size_t t = getDirEntryCreateTimeBytes(&vd, getFirstClusterOfRootDir(&vd), 0);
+ 	struct tm *dt = decodeTimeBytes(t);
+
+ 	fprintf(stdout, "Year: %d\n", dt->tm_year);
+ 	fprintf(stdout, "Month: %d\n", dt->tm_mon);
+ 	fprintf(stdout, "Day: %d\n", dt->tm_mday);
+ 	fprintf(stdout, "Hour: %d\n", dt->tm_hour);
+ 	fprintf(stdout, "Min: %d\n", dt->tm_min);
+ 	fprintf(stdout, "Sec: %d\n", dt->tm_sec);
 
  	closeVirDrive(&vd);
 

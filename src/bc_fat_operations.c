@@ -13,14 +13,41 @@
  *     file allocation table entry will consist of 4 bytes. This will
  *     allow for 128 entries per sector. Each file allocation table
  *     entry can hold one of three types of values:
+ *     
  *       - The address of the next cluster in the chain
  *       - The end of chain identifier 0xfffffff
  *       - The empty cluster identifier 0x0
+ *       
+ *     File allocation table entry addresses refer to the cluster 
+ *     number of the cluster the entry represents. The cluster numbers
+ *     are defined as follows:
+ *     
+ *       -   0: The boot sector/cluster
+ *       -   1: The first cluster of the file allocation table
+ *       -   2: The second cluster of the file allocation table
+ *         ...
+ *       -   n: The last cluster of the file allocation table
+ *              Note: n = (((drive size / sector size) * entry size) / sector size) + 1
+ *       - n+1: The root directory sector
+ *       - n+2: The first sector of the data region
+ *         ...
+ *       -   x: The last sector of the data region
+ *              Note: x = (drive size / sector size) - 1
  *  
  *  This program was written for use in Linux.
 */
 
 #include "bc_fat_operations.h"
+
+/**
+ * Initializes the file allocation table sectors of a virtual drive.
+ *
+ * @param virDrive A pointer to the file pointer of the virtual drive
+ */
+void initFATSectors(FILE **virDrive)
+{
+	setFATEntry(virDrive, getFirstClusterOfRootDir(virDrive), 0xffffffff);
+}
 
 /**
  * Returns the value of the given file allocation table entry. This will

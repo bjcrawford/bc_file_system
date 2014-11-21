@@ -10,14 +10,22 @@
  *  Description: This program was written for use in Linux.
 */
 
-
 #ifndef BC_FAT_OPERATIONS
 #define BC_FAT_OPERATIONS
 
- size_t getFATEntry(FILE **virDrive, size_t entryAddr);
- size_t getFATStartLocation(FILE **virDrive);
- void setFATEntry(FILE **virDrive, size_t entryAddr, size_t value);
- size_t addClusterToChain(FILE **virDrive, size_t entryAddr);
+#include <stdio.h>
+#include <stdlib.h>
+#include "bc_drive_operations.h"
+#include "bc_boot_sec_operations.h"
+
+void initFATSectors(FILE **virDrive);
+
+size_t getFATEntry(FILE **virDrive, size_t entryAddr);
+size_t getFATStartLocation(FILE **virDrive);
+
+void setFATEntry(FILE **virDrive, size_t entryAddr, size_t value);
+
+size_t addClusterToChain(FILE **virDrive, size_t entryAddr);
 void findAndSetNextFreeCluster(FILE **virDrive);
 
 #endif

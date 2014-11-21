@@ -10,13 +10,14 @@
  *  Description: This program was written for use in Linux.
 */
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #ifndef BC_BOOT_SEC_OPERATIONS
 #define BC_BOOT_SEC_OPERATIONS
 
-int initBootSector(FILE **virDrive, char *driveLabel);
+#include <stdio.h>
+#include <stdlib.h>
+#include "bc_drive_operations.h"
+
+void initBootSector(FILE **virDrive, char *driveLabel);
 
 size_t getInitialized(FILE **virDrive);
 char *getDriveLabel(FILE **virDrive);

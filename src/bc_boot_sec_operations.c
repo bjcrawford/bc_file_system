@@ -41,9 +41,10 @@
  * @param[in] driveLabel A string holding the label to associate with the
  *                       drive. Must be 20 characters or fewer.
 */
-int initBootSector(FILE **virDrive, char *driveLabel)
+void initBootSector(FILE **virDrive, char *driveLabel)
 {
 	rewind(*virDrive);
+	/* Rewind can throw an error under certain conditions */
 
 	size_t driveSize = 0;
 	while(fgetc(*virDrive) != EOF)
@@ -64,8 +65,6 @@ int initBootSector(FILE **virDrive, char *driveLabel)
 	setInitialized(virDrive, 1);
 
 	rewind(*virDrive);
-
-	return 0;
 }
 
 /*

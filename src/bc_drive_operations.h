@@ -10,16 +10,17 @@
  *  Description: This program was written for use in Linux.
 */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include "bc_boot_sec_operations.h"
-
 #ifndef BC_DRIVE_OPERATIONS
 #define BC_DRIVE_OPERATIONS
 
+#include <stdio.h>
+#include <stdlib.h>
+#include "bc_boot_sec_operations.h"
+#include "bc_fat_operations.h"
+
 int openVirDrive(FILE **virDrive, char *driveName);
 int closeVirDrive(FILE **virDrive);
-int initVirDrive(FILE **virDrive, char *driveLabel);
+void initVirDrive(FILE **virDrive, char *driveLabel);
 void formatVirDrive(FILE **virDrive);
 
 void writeNum(FILE **virDrive, size_t loc, size_t len, size_t num);

@@ -43,9 +43,10 @@ int closeVirDrive(FILE **virDrive)
  * @param[in] virDrive   A pointer to the file pointer of the virtual drive
  * @param[in] driveLabel A string containing the drive label
 */
-int initVirDrive(FILE **virDrive, char *driveLabel)
+void initVirDrive(FILE **virDrive, char *driveLabel)
 {
-	return initBootSector(virDrive, driveLabel);
+	initBootSector(virDrive, driveLabel);
+	initFATSectors(virDrive);
 }
 
 /** 

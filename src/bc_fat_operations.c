@@ -36,7 +36,7 @@
 size_t getFATEntry(FILE **virDrive, size_t entryAddr)
 {
 	size_t loc = getFATStartLocation(virDrive);
-	loc += entryAddr * 4;
+	loc += (entryAddr - getFirstClusterOfRootDir(virDrive)) * 4;
 
 	return readNum(virDrive, loc, 4);
 }
@@ -70,7 +70,7 @@ size_t getFATStartLocation(FILE **virDrive)
 void setFATEntry(FILE **virDrive, size_t entryAddr, size_t value)
 {
 	size_t loc = getFATStartLocation(virDrive);
-	loc += entryAddr * 4;
+	loc += (entryAddr - getFirstClusterOfRootDir(virDrive)) * 4;
 	writeNum(virDrive, loc, 4, value);
 }
 
@@ -86,7 +86,7 @@ void setFATEntry(FILE **virDrive, size_t entryAddr, size_t value)
  */
 size_t addClusterToChain(FILE **virDrive, size_t entryAddr)
 {
-	size_t next = getNextFreeCluster(virDrive)
+	size_t next = getNextFreeCluster(virDrive);
 	setFATEntry(virDrive, entryAddr, next);
 	setFATEntry(virDrive, next, 0xffffffff);
 	findAndSetNextFreeCluster(virDrive);
@@ -102,12 +102,12 @@ size_t addClusterToChain(FILE **virDrive, size_t entryAddr)
  */
 void findAndSetNextFreeCluster(FILE **virDrive)
 {
-	size_t entryAddr = 0;
+	size_t entryAddr = getFirstClusterOfRootDir(virDrive) + 1;
 	size_t entriesPerSector = getBytesPerSector(virDrive) / 4;
 	size_t maxEntries = getNumberOfSectorsPerFAT(virDrive) * entriesPerSector; 
 	while(getFATEntry(virDrive, entryAddr) != 0x0)
 	{
-		if(entryAddr < entriesPerSector)
+		if(entryAddr < maxEntries)
 		{
 			/* FAT is full, handle error */
 		}

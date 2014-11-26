@@ -16,17 +16,21 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include "bc_drive_operations.h"
 #include "bc_boot_operations.h"
 #include "bc_fat_operations.h"
 
 void createDirEntry(FILE**, size_t, char, char*, char*);
+char *getDirectoryListing(FILE**, size_t);
+
 size_t encodeTimeBytes();
 struct tm *decodeTimeBytes(size_t);
 
 size_t getDataStartLoc(FILE**);
 size_t getDirEntryLoc(FILE**, size_t, size_t);
+
 char getDirEntryAttr(FILE**, size_t, size_t);
 char *getDirEntryFileName(FILE**, size_t, size_t);
 char *getDirEntryFileExt(FILE**, size_t, size_t);
@@ -42,6 +46,7 @@ void setDirEntryFileExt(FILE**, size_t, size_t, char*);
 void setDirEntryModifiedTimeBytes(FILE**, size_t, size_t, size_t);
 void setDirEntryStartCluster(FILE**, size_t, size_t, size_t);
 void setDirEntryFileSize(FILE**, size_t, size_t, size_t);
+
 size_t adjustDirEntryFileSize(FILE**, size_t, size_t, size_t, size_t);
 
 #endif

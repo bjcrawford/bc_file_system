@@ -91,6 +91,89 @@ void createDirEntry(FILE **virDrive, size_t clusterAddr,
 }
 
 /**
+ * Returns a string containing a listing of the contents of a
+ * directory. 
+ *
+ * @param  virDrive    A pointer to the file pointer of the virtual drive
+ * @param  clusterAddr The cluster address of the directory
+ * @return             A string containing the directory listing
+ */
+char *getDirectoryListing(FILE **virDrive, size_t clusterAddr)
+{
+	char *listing;
+	char attr;
+	int end = 0;
+	size_t count= 0;
+	size_t entryAddr = 0;
+	size_t currentCluster = clusterAddr;
+
+	/* Determine the number of files/folders in the directory */
+	while(!end)
+	{
+		attr = getDirEntryAttr(virDrive, currentCluster, entryAddr);
+		if((attr & 0x1) ^ 0x1)
+			end = 1;
+		else
+		{
+			entryAddr++;
+			count++;
+		
+			if(entryAddr > 15)
+			{
+				currentCluster = getFATEntry(virDrive, currentCluster);
+				if(currentCluster != 0xffffffff && currentCluster != 0x0)
+					entryAddr = 0;
+				else if(currentCluster == 0xffffffff) /* No more entries to check */
+					end = 1;
+				else /* Something is wrong */
+					fprintf(stderr, "Invalid value from getFatEntry\n");
+			}
+		}
+	}
+
+	/* Allocate space for the listing string */
+	listing = calloc(17 * count, sizeof(char));
+	strcpy(listing, "");
+
+	/* Reset iteration variables */
+	end = 0;
+	entryAddr = 0;
+	currentCluster = clusterAddr;
+
+	/* Record file info for each directory listing */
+	while(!end)
+	{
+		attr = getDirEntryAttr(virDrive, currentCluster, entryAddr);
+		if((attr & 0x1) ^ 0x1)
+			end = 1;
+		else
+		{
+			strcat(listing, getDirEntryFileName(virDrive, currentCluster, entryAddr));
+			if((attr & 0x10) ^ 0x10)
+			{
+				strcat(listing, ".");
+				strcat(listing, getDirEntryFileExt(virDrive, currentCluster, entryAddr));
+			}
+			strcat(listing, "\n");
+		
+			entryAddr++;
+			if(entryAddr > 15)
+			{
+				currentCluster = getFATEntry(virDrive, currentCluster);
+				if(currentCluster != 0xffffffff && currentCluster != 0x0)
+					entryAddr = 0;
+				else if(currentCluster == 0xffffffff) /* No more entries to check */
+					end = 1;
+				else /* Something is wrong */
+					fprintf(stderr, "Invalid value from getFatEntry\n");
+			}
+		}
+	}
+
+	return listing;
+}
+
+/**
  * Returns 4 bytes containing a time stamp of the current time. The layout
  * of the time stamp is as follows:
  *    Bits 0-5:   Year - 1985

@@ -125,6 +125,7 @@ size_t addClusterToChain(FILE **virDrive, size_t clusterAddr)
 	setFATEntry(virDrive, clusterAddr, next);
 	setFATEntry(virDrive, next, 0xffffffff);
 	findAndSetNextFreeCluster(virDrive);
+	setNumberOfFreeClusters(virDrive, getNumberOfFreeClusters(virDrive) - 1);
 
 	return next;
 }

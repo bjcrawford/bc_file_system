@@ -66,6 +66,7 @@ int closeVirDrive(FILE **virDrive)
 */
 void initVirDrive(FILE **virDrive, char *driveLabel)
 {
+	formatVirDrive(virDrive);
 	initBootCluster(virDrive, driveLabel);
 	initFATClusters(virDrive);
 }
@@ -155,11 +156,11 @@ size_t readNum(FILE **virDrive, size_t loc, size_t len)
 char *readStr(FILE **virDrive, size_t loc, size_t len)
 {
 	size_t i;
-	char *result = (char*) calloc(sizeof(char), len);
+	char *result = (char*) calloc(len + 1, sizeof(char));
 	char *p = result;
 	fseek(*virDrive, loc, SEEK_SET);
 	for(i = 0; i < len; i++)
 		*p++ = fgetc(*virDrive);
-
+	*p = '\0';
 	return result;
 }

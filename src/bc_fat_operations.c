@@ -54,7 +54,7 @@ void initFATClusters(FILE **virDrive)
 	/* FAT Clusters */
 	for(i = 1; i < n; i++)
 		setFATEntry(virDrive, i, i + 1);
-	setFATEntry(virDrive, n, 0xffffffff)
+	setFATEntry(virDrive, n, 0xffffffff);
 	/* Root Dir Cluster */
 	setFATEntry(virDrive, getFirstClusterOfRootDir(virDrive), 0xffffffff);
 }

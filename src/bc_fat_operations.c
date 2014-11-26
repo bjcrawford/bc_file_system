@@ -15,7 +15,7 @@
  *     entry can hold one of three types of values:
  *     
  *       - The address of the next cluster in the chain
- *       - The end of chain identifier 0xfffffff
+ *       - The end of chain identifier 0xffffffff
  *       - The empty cluster identifier 0x0
  *       
  *     File allocation table cluster addresses (clusterAddr) refer to the 
@@ -46,6 +46,16 @@
  */
 void initFATClusters(FILE **virDrive)
 {
+	int i;
+	int n = getNumberOfClustersPerFAT(virDrive);
+	
+	/* Boot Cluster */
+	setFATEntry(virDrive, 0, 0xffffffff);
+	/* FAT Clusters */
+	for(i = 1; i < n; i++)
+		setFATEntry(virDrive, i, i + 1);
+	setFATEntry(virDrive, n, 0xffffffff)
+	/* Root Dir Cluster */
 	setFATEntry(virDrive, getFirstClusterOfRootDir(virDrive), 0xffffffff);
 }
 
@@ -53,7 +63,7 @@ void initFATClusters(FILE **virDrive)
  * Returns the value of a file allocation table entry. This will
  * return one of three types of entries:
  *   - The address of the next cluster in the chain
- *   - The end of chain identifier 0xfffffff
+ *   - The end of chain identifier 0xffffffff
  *   - The empty cluster identifier 0x0
  *
  * @param  virDrive    A pointer to the file pointer of the virtual drive
@@ -63,7 +73,7 @@ void initFATClusters(FILE **virDrive)
 size_t getFATEntry(FILE **virDrive, size_t clusterAddr)
 {
 	size_t loc = getFATStartLocation(virDrive);
-	loc += (clusterAddr - getFirstClusterOfRootDir(virDrive)) * 4;
+	loc += clusterAddr * 4;
 
 	return readNum(virDrive, loc, 4);
 }
@@ -97,7 +107,7 @@ size_t getFATStartLocation(FILE **virDrive)
 void setFATEntry(FILE **virDrive, size_t clusterAddr, size_t value)
 {
 	size_t loc = getFATStartLocation(virDrive);
-	loc += (clusterAddr - getFirstClusterOfRootDir(virDrive)) * 4;
+	loc += clusterAddr * 4;
 	writeNum(virDrive, loc, 4, value);
 }
 

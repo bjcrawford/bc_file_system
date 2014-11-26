@@ -21,36 +21,27 @@
 #include "bc_boot_sec_operations.h"
 #include "bc_fat_operations.h"
 
-void createDirEntry(FILE **virDrive, size_t dirCluster,
-	                     char attr, char *name, char *ext);
+void createDirEntry(FILE**, size_t, char, char*, char*);
 size_t encodeTimeBytes();
-struct tm *decodeTimeBytes(size_t timeBytes);
+struct tm *decodeTimeBytes(size_t);
 
-size_t getDataStartLoc(FILE **virDrive);
-size_t getDirEntryLoc(FILE **virDrive, size_t dirCluster, size_t entryAddr);
-char getDirEntryAttr(FILE **virDrive, size_t dirCluster, size_t entryAddr);
-char *getDirEntryFileName(FILE **virDrive, size_t dirCluster, size_t entryAddr);
-char *getDirEntryFileExt(FILE **virDrive, size_t dirCluster, size_t entryAddr);
-size_t getDirEntryCreateTimeBytes(FILE **virDrive, size_t dirCluster, size_t entryAddr);
-size_t getDirEntryModifiedTimeBytes(FILE **virDrive, size_t dirCluster, size_t entryAddr);
-size_t getDirEntryStartCluster(FILE **virDrive, size_t dirCluster, size_t entryAddr);
-size_t getDirEntryFileSize(FILE **virDrive, size_t dirCluster, size_t entryAddr);
-size_t getFirstFreeDirEntry(FILE **virDrive, size_t dirCluster);
+size_t getDataStartLoc(FILE**);
+size_t getDirEntryLoc(FILE**, size_t, size_t);
+char getDirEntryAttr(FILE**, size_t, size_t);
+char *getDirEntryFileName(FILE**, size_t, size_t);
+char *getDirEntryFileExt(FILE**, size_t, size_t);
+size_t getDirEntryCreateTimeBytes(FILE**, size_t, size_t);
+size_t getDirEntryModifiedTimeBytes(FILE**, size_t, size_t);
+size_t getDirEntryStartCluster(FILE**, size_t, size_t);
+size_t getDirEntryFileSize(FILE**, size_t, size_t);
+size_t getFirstFreeDirEntry(FILE**, size_t);
 
-void setDirEntryAttr(FILE **virDrive, size_t dirCluster, 
-	                 size_t entryAddr, char attr);
-void setDirEntryFileName(FILE **virDrive, size_t dirCluster,
-	                     size_t entryAddr, char *name);
-void setDirEntryFileExt(FILE **virDrive, size_t dirCluster,
-	                    size_t entryAddr, char *ext);
-void setDirEntryModifiedTimeBytes(FILE **virDrive, size_t dirCluster,
-	                              size_t entryAddr, size_t timeBytes);
-void setDirEntryStartCluster(FILE **virDrive, size_t dirCluster,
-	                         size_t entryAddr, size_t clusterAddr);
-void setDirEntryFileSize(FILE **virDrive, size_t dirCluster,
-	                     size_t entryAddr, size_t fileSize);
-size_t adjustDirEntryFileSize(FILE **virDrive, size_t dirCluster,
-	                          size_t entryAddr, size_t adjFileSize,
-	                          size_t increase);
+void setDirEntryAttr(FILE**, size_t, size_t, char);
+void setDirEntryFileName(FILE**, size_t, size_t, char*);
+void setDirEntryFileExt(FILE**, size_t, size_t, char*);
+void setDirEntryModifiedTimeBytes(FILE**, size_t, size_t, size_t);
+void setDirEntryStartCluster(FILE**, size_t, size_t, size_t);
+void setDirEntryFileSize(FILE**, size_t, size_t, size_t);
+size_t adjustDirEntryFileSize(FILE**, size_t, size_t, size_t, size_t);
 
 #endif

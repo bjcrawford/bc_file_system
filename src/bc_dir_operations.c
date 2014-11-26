@@ -9,7 +9,7 @@
  *  Date: 2014-12-05
  *  Description: 
  *     The file holds all of the operations which can be performed on
- *     the directory sectors of the virtual drive. Each directory 
+ *     the directory clusters of the virtual drive. Each directory 
  *     entry will consist of 32 bytes. This will allow for 16 entries
  *     per cluster. The layout of the data contained in each directory 
  *     entry is as follows:
@@ -23,7 +23,8 @@
  *                    Bit 3: 1 for system file
  *                    Bit 4: 1 for subdirectory
  *                    The remaining bits are unused
- *        (1-15)  | The file/folder name (name: 12, extension: 3)
+ *        (1-12)  | The file/folder name (12 chars max)
+ *        (13-15) | The file/folder extension (3 chars max)
  *        (16-19) | Creation date/time
  *                    Bits 0-5:   Year - 1985
  *                    Bits 6-9:   Month
@@ -49,22 +50,22 @@
 /**
  * Creates a directory entry in the given directory cluster
  *
- * @param  virDrive   A pointer to the file pointer of the virtual drive
- * @param  dirCluster The starting cluster of the directory
- * @param  attr       The attributes of the file/folder (one byte)
- *                      Bit 0: 0 for unused entry, 1 for used entry
- *                      Bit 1: 0 for R/O, 1 for R/W
- *                      Bit 2: 1 for hidden file/folder
- *                      Bit 3: 1 for system file
- *                      Bit 4: 1 for subdirectory
- *                      The remaining bits are unused
- * @param  name       The name of the file/folder (maximum 12 characters)
- * @param  ext        The extension of the file (maximum 3 characters)          
+ * @param  virDrive    A pointer to the file pointer of the virtual drive
+ * @param  clusterAddr The starting cluster of the directory
+ * @param  attr        The attributes of the file/folder (one byte)
+ *                       Bit 0: 0 for unused entry, 1 for used entry
+ *                       Bit 1: 0 for R/O, 1 for R/W
+ *                       Bit 2: 1 for hidden file/folder
+ *                       Bit 3: 1 for system file
+ *                       Bit 4: 1 for subdirectory
+ *                       The remaining bits are unused
+ * @param  name        The name of the file/folder (maximum 12 characters)
+ * @param  ext         The extension of the file (maximum 3 characters)          
  */
-void createDirEntry(FILE **virDrive, size_t dirCluster,
+void createDirEntry(FILE **virDrive, size_t clusterAddr,
 	                     char attr, char *name, char *ext)
 {
-	size_t loc = getFirstFreeDirEntry(virDrive, dirCluster);
+	size_t loc = getFirstFreeDirEntry(virDrive, clusterAddr);
 	size_t currentTime = encodeTimeBytes();
 
 	/* Set attributes */
@@ -87,7 +88,6 @@ void createDirEntry(FILE **virDrive, size_t dirCluster,
 
 	/* Set file size */
 	writeNum(virDrive, loc + 28, 4, 0);
-
 }
 
 /**
@@ -153,18 +153,18 @@ struct tm *decodeTimeBytes(size_t timeBytes)
 
 /**
  * Returns the offset (in bytes) from the beginning of the virtual drive
- * to the start of the first data sector.
+ * to the start of the first data cluster.
  *
  * @param  virDrive A pointer to the file pointer of the virtual drive
- * @return          The drive offset of the first data sector in bytes
+ * @return          The drive offset of the first data cluster in bytes
  */
 size_t getDataStartLoc(FILE **virDrive)
 {
 	size_t loc = 0;
-	/* Skip over boot sector */
-	loc += getBytesPerSector(virDrive) * getNumberOfReservedSectors(virDrive);
+	/* Skip over boot cluster */
+	loc += getBytesPerCluster(virDrive) * getNumberOfReservedClusters(virDrive);
 	/* Skip over FAT */
-	loc += getBytesPerSector(virDrive) * getNumberOfSectorsPerFAT(virDrive);
+	loc += getBytesPerCluster(virDrive) * getNumberOfClustersPerFAT(virDrive);
 
 	return loc;
 }
@@ -182,7 +182,7 @@ size_t getDirEntryLoc(FILE **virDrive, size_t dirCluster, size_t entryAddr)
 {
 	size_t loc = 0;
 	/* Skip to the given dir cluster */
-	loc += getBytesPerSector(virDrive) * dirCluster;
+	loc += getBytesPerCluster(virDrive) * dirCluster;
 	/* Skip to the given entry */
 	loc += 32 * entryAddr;
 
@@ -308,21 +308,12 @@ size_t getFirstFreeDirEntry(FILE **virDrive, size_t dirCluster)
 	char attr;
 	int found = 0;
 	size_t loc = 0;
-	size_t dataStartLoc;
 	size_t entryAddr = 0;
 	size_t currentCluster = dirCluster;
-	size_t bytesPerSector = getBytesPerSector(virDrive);
-
-	/* Skip over boot sector 
-	loc += bytesPerSector;
-	/* Skip over FAT 
-	loc += bytesPerSector * getNumberOfSectorsPerFAT(virDrive);
-	/* Record data start location 
-	dataStartLoc = loc;
-	*/
+	size_t bytesPerCluster = getBytesPerCluster(virDrive);
 
 	/* Skip to directory cluster */
-	loc += bytesPerSector * currentCluster;
+	loc += bytesPerCluster * currentCluster;
 
 	while(!found)
 	{
@@ -331,14 +322,14 @@ size_t getFirstFreeDirEntry(FILE **virDrive, size_t dirCluster)
 			currentCluster = getFATEntry(virDrive, currentCluster);
 			if(currentCluster != 0xffffffff && currentCluster != 0x0)
 			{
-				loc = bytesPerSector * currentCluster;
+				loc = bytesPerCluster * currentCluster;
 				entryAddr = 0;
 			}
 			else if(currentCluster == 0xffffffff)
 			{
 				/* Add cluster to directory chain */
 				currentCluster = addClusterToChain(virDrive, currentCluster);
-				loc = bytesPerSector * currentCluster;
+				loc = bytesPerCluster * currentCluster;
 				entryAddr = 0;
 			}
 			else

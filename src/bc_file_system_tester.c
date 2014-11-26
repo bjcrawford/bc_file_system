@@ -29,11 +29,10 @@
 
  	fprintf(stdout, "Initialized: %zu\n", getInitialized(&vd));
  	fprintf(stdout, "Drive Label: %s\n", getDriveLabel(&vd));
- 	fprintf(stdout, "Bytes Per Sector: %zu\n", getBytesPerSector(&vd));
- 	fprintf(stdout, "Sectors Per Cluster: %zu\n", getSectorsPerCluster(&vd));
- 	fprintf(stdout, "Number Of Reserved Sectors: %zu\n", getNumberOfReservedSectors(&vd));
- 	fprintf(stdout, "Number Of Sectors On Drive: %zu\n", getNumberOfSectorsOnDrive(&vd));
- 	fprintf(stdout, "Number Of Sectors Per FAT: %zu\n", getNumberOfSectorsPerFAT(&vd));
+ 	fprintf(stdout, "Bytes Per Cluster: %zu\n", getBytesPerCluster(&vd));
+ 	fprintf(stdout, "Number Of Reserved Clusters: %zu\n", getNumberOfReservedClusters(&vd));
+ 	fprintf(stdout, "Number Of Clusters On Drive: %zu\n", getNumberOfClustersOnDrive(&vd));
+ 	fprintf(stdout, "Number Of Clusters Per FAT: %zu\n", getNumberOfClustersPerFAT(&vd));
  	fprintf(stdout, "First Cluster Of Root Dir: %zu\n", getFirstClusterOfRootDir(&vd));
  	fprintf(stdout, "Number Of Free Clusters: %zu\n", getNumberOfFreeClusters(&vd));
  	fprintf(stdout, "Next Free Cluster: %zu\n", getNextFreeCluster(&vd));

@@ -17,30 +17,28 @@
 #include <stdlib.h>
 #include "bc_drive_operations.h"
 
-void initBootSector(FILE **virDrive, char *driveLabel);
+void initBootCluster(FILE**, char*);
 
-size_t getInitialized(FILE **virDrive);
-char *getDriveLabel(FILE **virDrive);
-size_t getBytesPerSector(FILE **virDrive);
-size_t getSectorsPerCluster(FILE **virDrive);
-size_t getNumberOfReservedSectors(FILE **virDrive);
-size_t getNumberOfSectorsOnDrive(FILE **virDrive);
-size_t getNumberOfSectorsPerFAT(FILE **virDrive);
-size_t getFirstClusterOfRootDir(FILE **virDrive);
-size_t getNumberOfFreeClusters(FILE **virDrive);
-size_t getNextFreeCluster(FILE **virDrive);
-size_t getSizeOfDrive(FILE **virDrive);
+size_t getInitialized(FILE**);
+char *getDriveLabel(FILE**);
+size_t getBytesPerCluster(FILE**);
+size_t getNumberOfReservedClusters(FILE**);
+size_t getNumberOfClustersOnDrive(FILE**);
+size_t getNumberOfClustersPerFAT(FILE**);
+size_t getFirstClusterOfRootDir(FILE**);
+size_t getNumberOfFreeClusters(FILE**);
+size_t getNextFreeCluster(FILE**);
+size_t getSizeOfDrive(FILE**);
 
-void setInitialized(FILE **virDrive, size_t init);
-void setDriveLabel(FILE **virDrive, char *driveLabel);
-void setBytesPerSector(FILE **virDrive, size_t bytes);
-void setSectorsPerCluster(FILE **virDrive, size_t sectors);
-void setNumberOfReservedSectors(FILE **virDrive, size_t reserved);
-void setNumberOfSectorsOnDrive(FILE **virDrive, size_t sectors);
-void setNumberOfSectorsPerFAT(FILE **virDrive, size_t sectors);
-void setFirstClusterOfRootDir(FILE **virDrive, size_t cluster);
-void setNumberOfFreeClusters(FILE **virDrive, size_t clusters);
-void setNextFreeCluster(FILE **virDrive, size_t cluster);
-void setSizeOfDrive(FILE **virDrive, size_t size);
+void setInitialized(FILE**, size_t);
+void setDriveLabel(FILE**, char*);
+void setBytesPerCluster(FILE**, size_t);
+void setNumberOfReservedClusters(FILE**, size_t);
+void setNumberOfClustersOnDrive(FILE**, size_t);
+void setNumberOfClustersPerFAT(FILE**, size_t);
+void setFirstClusterOfRootDir(FILE**, size_t);
+void setNumberOfFreeClusters(FILE**, size_t);
+void setNextFreeCluster(FILE**, size_t);
+void setSizeOfDrive(FILE**, size_t);
 
 #endif

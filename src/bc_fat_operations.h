@@ -18,14 +18,14 @@
 #include "bc_drive_operations.h"
 #include "bc_boot_sec_operations.h"
 
-void initFATSectors(FILE **virDrive);
+void initFATClusters(FILE**);
 
-size_t getFATEntry(FILE **virDrive, size_t entryAddr);
-size_t getFATStartLocation(FILE **virDrive);
+size_t getFATEntry(FILE**, size_t);
+size_t getFATStartLocation(FILE**);
 
-void setFATEntry(FILE **virDrive, size_t entryAddr, size_t value);
+void setFATEntry(FILE**, size_t, size_t);
 
-size_t addClusterToChain(FILE **virDrive, size_t entryAddr);
-void findAndSetNextFreeCluster(FILE **virDrive);
+size_t addClusterToChain(FILE**, size_t);
+void findAndSetNextFreeCluster(FILE**);
 
 #endif

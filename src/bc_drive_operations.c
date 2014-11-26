@@ -7,7 +7,28 @@
  *  Prof: Kwatny
  *  TAs: Liang and Casey
  *  Date: 2014-12-05
- *  Description: This program was written for use in Linux.
+ *  Description: 
+ *     This file holds all of the operations which can be performed on
+ *     the virtual drive. The virtual drive will be represented by a 
+ *     pre-made file (one of the four files provided: Drive10MB, 
+ *     Drive5MB, Drive3MB, or Drive2MB). The virtual drive's allocation 
+ *     unit size, or cluster size (as it will be refered to throughout 
+ *     these docs) will be 512 bytes. The layout of the clusters on the 
+ *     virtual drive will be as follows (cluster addresses):
+ *
+ *       -   0: The boot cluster
+ *       -   1: The first cluster of the file allocation table
+ *       -   2: The second cluster of the file allocation table
+ *         ...
+ *       -   n: The last cluster of the file allocation table
+ *              Note: n = (((drive size / cluster size) * FAT entry size) / cluster size) + 1
+ *       - n+1: The root directory cluster
+ *       - n+2: The first cluster of the data region
+ *         ...
+ *       -   x: The last cluster of the data region
+ *              Note: x = (drive size / cluster size) - 1
+ *              
+ *  This program was written for use in Linux.
 */
 
 #include "bc_drive_operations.h"
@@ -38,15 +59,15 @@ int closeVirDrive(FILE **virDrive)
 
 /** 
  * Initializes a virtual drive (file). Formats the virtual drive and initializes 
- * the boot sector.
+ * the boot cluster.
  *
  * @param[in] virDrive   A pointer to the file pointer of the virtual drive
  * @param[in] driveLabel A string containing the drive label
 */
 void initVirDrive(FILE **virDrive, char *driveLabel)
 {
-	initBootSector(virDrive, driveLabel);
-	initFATSectors(virDrive);
+	initBootCluster(virDrive, driveLabel);
+	initFATClusters(virDrive);
 }
 
 /** 
@@ -87,10 +108,10 @@ void writeNum(FILE **virDrive, size_t loc, size_t len, size_t num)
 /**
  * Writes a string to the virtual drive (file) 
  *
- * @param virDrive A pointer to the file pointer of the virtual drive
- * @param loc      The offset in bytes at which to write the string
- * @param len      The maximum length in bytes of the write
- * @param str      The string to be written
+ * @param[in] virDrive A pointer to the file pointer of the virtual drive
+ * @param[in] loc      The offset in bytes at which to write the string
+ * @param[in] len      The maximum length in bytes of the write
+ * @param[in] str      The string to be written
  */
 void writeStr(FILE **virDrive, size_t loc, size_t len, char *str)
 {
@@ -126,10 +147,10 @@ size_t readNum(FILE **virDrive, size_t loc, size_t len)
 /**
  * Reads a string from the virtual drive (file) 
  *
- * @param virDrive A pointer to the file pointer of the virtual drive
- * @param loc      The offset in bytes at which to read the string
- * @param len      The maximum length in bytes of the read
- * @param str      The string read
+ * @param[in] virDrive A pointer to the file pointer of the virtual drive
+ * @param[in] loc      The offset in bytes at which to read the string
+ * @param[in] len      The maximum length in bytes of the read
+ * @param[in] str      The string read
  */
 char *readStr(FILE **virDrive, size_t loc, size_t len)
 {

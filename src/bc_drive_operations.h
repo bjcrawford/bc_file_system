@@ -18,14 +18,14 @@
 #include "bc_boot_sec_operations.h"
 #include "bc_fat_operations.h"
 
-int openVirDrive(FILE **virDrive, char *driveName);
-int closeVirDrive(FILE **virDrive);
-void initVirDrive(FILE **virDrive, char *driveLabel);
-void formatVirDrive(FILE **virDrive);
+int openVirDrive(FILE**, char*);
+int closeVirDrive(FILE**);
+void initVirDrive(FILE**, char*);
+void formatVirDrive(FILE**);
 
-void writeNum(FILE **virDrive, size_t loc, size_t len, size_t num);
-void writeStr(FILE **virDrive, size_t loc, size_t len, char *str);
-size_t readNum(FILE **virDrive, size_t loc, size_t len);
-char *readStr(FILE **virDrive, size_t loc, size_t len);
+void writeNum(FILE**, size_t, size_t, size_t);
+void writeStr(FILE**, size_t, size_t, char*);
+size_t readNum(FILE**, size_t, size_t);
+char *readStr(FILE**, size_t, size_t);
 
  #endif

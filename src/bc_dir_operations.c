@@ -393,6 +393,7 @@ size_t getFirstFreeDirEntry(FILE **virDrive, size_t dirCluster)
 	size_t loc = 0;
 	size_t entryAddr = 0;
 	size_t currentCluster = dirCluster;
+	size_t nextCluster = 0;
 	size_t bytesPerCluster = getBytesPerCluster(virDrive);
 
 	/* Skip to directory cluster */
@@ -400,36 +401,23 @@ size_t getFirstFreeDirEntry(FILE **virDrive, size_t dirCluster)
 
 	while(!found)
 	{
-		if(entryAddr > 15)
-		{
-			currentCluster = getFATEntry(virDrive, currentCluster);
-			if(currentCluster != 0xffffffff && currentCluster != 0x0)
-			{
-				loc = bytesPerCluster * currentCluster;
-				entryAddr = 0;
-			}
-			else if(currentCluster == 0xffffffff)
-			{
-				/* Add cluster to directory chain */
-				currentCluster = addClusterToChain(virDrive, currentCluster);
-				loc = bytesPerCluster * currentCluster;
-				entryAddr = 0;
-			}
-			else
-			{
-				/* Something is wrong */
-				fprintf(stderr, "Invalid value from getFatEntry\n");
-			}
-		}
 		attr = getDirEntryAttr(virDrive, currentCluster, entryAddr);
-		if(attr ^ 0x1)
-		{
+		if((attr & 0x1) ^ 0x1)
 			found = 1;
-		}
 		else
 		{
 			loc += 32;
 			entryAddr++;
+		
+			if(entryAddr > 15)
+			{
+				nextCluster = getFATEntry(virDrive, currentCluster);
+				if(nextCluster == 0xffffffff)
+					nextCluster = addClusterToChain(virDrive, currentCluster);
+				loc = bytesPerCluster * nextCluster;
+				currentCluster = nextCluster;
+				entryAddr = 0;
+			}
 		}
 	}
 

@@ -13,6 +13,8 @@
 #ifndef BC_FILE_STRUCT
 #define BC_FILE_STRUCT
 
+#include <stdlib.h>
+
  typedef struct
  {
  	size_t startLoc;
@@ -23,8 +25,8 @@
  	int write;
  	int hidden;
  	int subDir;
- 	char *fileName
- 	char *fileExt
+ 	char *fileName;
+ 	char *fileExt;
  	size_t createDate;
  	size_t modifyDate;
  	size_t firstClusterAddr;

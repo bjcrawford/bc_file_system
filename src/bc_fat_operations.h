@@ -16,7 +16,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "bc_drive_operations.h"
-#include "bc_boot_sec_operations.h"
+#include "bc_boot_operations.h"
 
 void initFATClusters(FILE**);
 

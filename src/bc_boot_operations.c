@@ -1,5 +1,5 @@
 /**
- * @file bc_boot_sec_operations.c
+ * @file bc_boot_operations.c
  * @author Brett Crawford
  * @brief Constructing a File System and the Related IOCS Functions
  * @details
@@ -30,7 +30,7 @@
  *  This program was written for use in Linux.
 */
 
-#include "bc_boot_sec_operations.h"
+#include "bc_boot_operations.h"
 
 /**
  * Initilizes the boot cluster of a virtual drive. The virtual drive should
@@ -54,11 +54,10 @@ void initBootCluster(FILE **virDrive, char *driveLabel)
 	setBytesPerCluster(virDrive, 512);
 	setNumberOfReservedClusters(virDrive, 1);
 	setNumberOfClustersOnDrive(virDrive, driveSize / 512);
-	setNumberOfClustersPerFAT(virDrive, (((driveSize / 512) * 4) / 512) + 1);
-	setFirstClusterOfRootDir(virDrive, (((driveSize / 512) * 4) / 512) + 2);
-	/* total clusters - (FAT + boot + root) */
-	setNumberOfFreeClusters(virDrive, (driveSize / 512) - ((((driveSize / 512) * 4) / 512) + 3));
-	setNextFreeCluster(virDrive, (((driveSize / 512) * 4) / 512) + 3);
+	setNumberOfClustersPerFAT(virDrive, ceil(((( (double) driveSize / 512) * 4) / 512)));
+	setFirstClusterOfRootDir(virDrive, ceil(((( (double) driveSize / 512) * 4) / 512)) + 1);
+	setNumberOfFreeClusters(virDrive, (driveSize / 512) - (ceil(((( (double) driveSize / 512) * 4) / 512)) + 2));
+	setNextFreeCluster(virDrive, ceil(((( (double) driveSize / 512) * 4) / 512)) + 2);
 	setSizeOfDrive(virDrive, driveSize);
 	setInitialized(virDrive, 1);
 

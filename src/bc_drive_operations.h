@@ -15,7 +15,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "bc_boot_sec_operations.h"
+#include "bc_boot_operations.h"
 #include "bc_fat_operations.h"
 
 int openVirDrive(FILE**, char*);

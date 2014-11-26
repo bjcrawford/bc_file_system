@@ -18,7 +18,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include "bc_drive_operations.h"
-#include "bc_boot_sec_operations.h"
+#include "bc_boot_operations.h"
 #include "bc_fat_operations.h"
 
 void createDirEntry(FILE**, size_t, char, char*, char*);

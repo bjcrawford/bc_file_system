@@ -1,5 +1,5 @@
 /**
- * @file bc_bc_boot_sec_operations.h
+ * @file bc_bc_boot_operations.h
  * @author Brett Crawford
  * @brief Constructing a File System and the Related IOCS Functions
  * @details
@@ -10,9 +10,10 @@
  *  Description: This program was written for use in Linux.
 */
 
-#ifndef BC_BOOT_SEC_OPERATIONS
-#define BC_BOOT_SEC_OPERATIONS
+#ifndef BC_BOOT_OPERATIONS
+#define BC_BOOT_OPERATIONS
 
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "bc_drive_operations.h"

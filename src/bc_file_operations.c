@@ -26,6 +26,13 @@ void createDirectory(FILE **virDrive, char *dirName)
 
 }
 
+BC_FILE *openFile(FILE **virDrive, char *fileName)
+{
+	BC_FILE *fp = malloc(sizeof(fp));
+
+	return fp;
+}
+
 size_t writeFile(FILE **virDrive, void *src, size_t size, size_t len, BC_FILE *dest)
 {
 	size_t written = 0;
@@ -43,9 +50,11 @@ size_t readFile(FILE **virDrive, void *dest, size_t size, size_t len, BC_FILE *s
 int closeFile(FILE **virDrive, BC_FILE *file)
 {
 
+	return 0;
 }
 
 int deleteFile(FILE **virDrive, BC_FILE *file)
 {
 	
+	return 0;
 }

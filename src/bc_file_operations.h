@@ -15,11 +15,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "bc_file_struct.h"
+#include "bc_dir_operations.h"
+#include "bc_strlib/bc_strlib.h"
 
-BC_FILE *createFile(FILE**, char*);
-void createDirectory(FILE**, char*);
 BC_FILE *openFile(FILE**, char*);
+void createDirectory(FILE**, char*);
 size_t writeFile(FILE**, void*, size_t, size_t, BC_FILE*);
 size_t readFile(FILE**, void*, size_t, size_t, BC_FILE*);
 int closeFile(FILE**, BC_FILE*);

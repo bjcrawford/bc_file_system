@@ -22,6 +22,7 @@ BC_FILE *openFile(FILE **virDrive, char *filePath)
 	char *fileExt = (char*) calloc(4, sizeof(char));
 	size_t clusterAddr = getRootDirectoryCluster(virDrive);
 	size_t nextClusterAddr;
+	size_t entryAddr;
 
 	if(strchr(filePath, '/') != NULL)
 	{
@@ -44,7 +45,7 @@ BC_FILE *openFile(FILE **virDrive, char *filePath)
 	strcpy(fileName, strtok(file, "."));
 	strcpy(fileExt, strtok(NULL, "."));
 
-	createDirFileEntry(virDrive, clusterAddr, 0x1, fileName, fileExt);
+	entryAddr = createDirFileEntry(virDrive, clusterAddr, 0x1, fileName, fileExt);
 
 	fp->startLoc = 0;
 	fp->currentLoc = 0;
@@ -54,12 +55,13 @@ BC_FILE *openFile(FILE **virDrive, char *filePath)
 	fp->write = 1;
 	fp->hidden = 0;
 	fp->subDir = 0;
-	fp->fileName = fileName;
-	fp->fileExt = fileExt;
-	fp->createDate = 0; 
-	fp->modifyDate = 0;
-	fp->firstClusterAddr = 0;
-	fp->fileSize = 0;
+	
+	fp->fileName = getDirEntryFileName(virDrive, clusterAddr, entryAddr);
+	fp->fileExt = getDirEntryFileExt(virDrive, clusterAddr, entryAddr);
+	fp->createDate = getDirEntryCreateTimeBytes(virDrive, clusterAddr, entryAddr);
+	fp->modifyDate = getDirEntryModifiedTimeBytes(virDrive, clusterAddr, entryAddr);
+	fp->firstClusterAddr = getDirEntryStartCluster(virDrive, clusterAddr, entryAddr);
+	fp->fileSize = getDirEntryFileSize(virDrive,clusterAddr, entryAddr);
 
 	return fp;
 }

@@ -3,6 +3,7 @@
    Date: 2014-03-25
    Description: This file is part of the bc_strlib */
 
+#include <ctype.h>
 #include "bc_strlib.h"
 
 /* Returns 1 if pre is a prefix of s, ignoring case. Otherwise 0 

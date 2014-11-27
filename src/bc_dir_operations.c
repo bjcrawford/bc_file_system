@@ -76,12 +76,14 @@ size_t getRootDirectoryCluster(FILE** virDrive)
  *                       Bit 4: 1 for subdirectory
  *                       The remaining bits are unused
  * @param  name        The name of the file/directory (maximum 12 characters)
- * @param  ext         The extension of the file (maximum 3 characters)          
+ * @param  ext         The extension of the file (maximum 3 characters)
+ * #return             The entry address of the new file
  */
-void createDirFileEntry(FILE **virDrive, size_t clusterAddr,
+size_t createDirFileEntry(FILE **virDrive, size_t clusterAddr,
 	                     char attr, char *name, char *ext)
 {
-	size_t loc = getFirstFreeDirEntry(virDrive, clusterAddr);
+	size_t entryAddr = getFirstFreeDirEntryLoc(virDrive, clusterAddr);
+	size_t loc = getDirEntryLoc(virDrive, clusterAddr, entryAddr);
 	size_t currentTime = encodeTimeBytes();
 
 	/* Set attributes */
@@ -104,6 +106,8 @@ void createDirFileEntry(FILE **virDrive, size_t clusterAddr,
 
 	/* Set file size */
 	writeNum(virDrive, loc + 28, 4, 0);
+
+	return entryAddr;
 }
 
 /**
@@ -395,6 +399,45 @@ size_t getDirEntryLoc(FILE **virDrive, size_t dirCluster, size_t entryAddr)
 }
 
 /**
+ * Returns the entry of the first free directory entry for a given
+ * directory cluster. If the given directory cluster is full, the directory 
+ * cluster chain will be extended.
+ *
+ * @param  virDrive   A pointer to the file pointer of the virtual drive
+ * @param  dirCluster The starting cluster of the directory
+ * @return            The entry address of the first free directory entry
+ */
+size_t getFirstFreeDirEntryAddr(FILE **virDrive, size_t dirCluster)
+{
+	char attr;
+	int found = 0;
+	size_t entryAddr = 0;
+	size_t currentCluster = dirCluster;
+	size_t nextCluster = 0;
+
+	while(!found)
+	{
+		attr = getDirEntryAttr(virDrive, dirCluster, entryAddr);
+		if((attr & 0x1) ^ 0x1)
+			found = 1;
+		else
+		{
+			entryAddr++;
+		
+			if(entryAddr % 16 == 0)
+			{
+				nextCluster = getFATEntry(virDrive, currentCluster);
+				if(nextCluster == 0xffffffff)
+					nextCluster = addClusterToChain(virDrive, currentCluster);
+				currentCluster = nextCluster;
+			}
+		}
+	}
+
+	return entryAddr;
+}
+
+/**
  * Returns the attributes byte of a given directory entry.
  *
  * @param  virDrive   A pointer to the file pointer of the virtual drive
@@ -497,52 +540,6 @@ size_t getDirEntryFileSize(FILE **virDrive, size_t dirCluster, size_t entryAddr)
 	size_t loc = getDirEntryLoc(virDrive, dirCluster, entryAddr);
 
 	return readNum(virDrive, loc + 28, 4);
-}
-
-/**
- * Returns the starting location of the first free directory entry for a given
- * directory cluster. If the given directory cluster is full, the directory 
- * cluster chain will be extended.
- *
- * @param  virDrive   A pointer to the file pointer of the virtual drive
- * @param  dirCluster The starting cluster of the directory
- * @return            The drive offset of the first free directory entry in bytes
- */
-size_t getFirstFreeDirEntry(FILE **virDrive, size_t dirCluster)
-{
-	char attr;
-	int found = 0;
-	size_t loc = 0;
-	size_t entryAddr = 0;
-	size_t currentCluster = dirCluster;
-	size_t nextCluster = 0;
-	size_t bytesPerCluster = getBytesPerCluster(virDrive);
-
-	/* Skip to directory cluster */
-	loc += bytesPerCluster * dirCluster;
-
-	while(!found)
-	{
-		attr = getDirEntryAttr(virDrive, dirCluster, entryAddr);
-		if((attr & 0x1) ^ 0x1)
-			found = 1;
-		else
-		{
-			loc += 32;
-			entryAddr++;
-		
-			if(entryAddr % 16 == 0)
-			{
-				nextCluster = getFATEntry(virDrive, currentCluster);
-				if(nextCluster == 0xffffffff)
-					nextCluster = addClusterToChain(virDrive, currentCluster);
-				loc = bytesPerCluster * nextCluster;
-				currentCluster = nextCluster;
-			}
-		}
-	}
-
-	return loc;
 }
 
 /**

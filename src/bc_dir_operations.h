@@ -33,6 +33,7 @@ struct tm *decodeTimeBytes(size_t);
 
 size_t getDataStartLoc(FILE**);
 size_t getDirEntryLoc(FILE**, size_t, size_t);
+size_t getFirstFreeDirEntryAddr(FILE**, size_t);
 
 char getDirEntryAttr(FILE**, size_t, size_t);
 char *getDirEntryFileName(FILE**, size_t, size_t);
@@ -41,7 +42,6 @@ size_t getDirEntryCreateTimeBytes(FILE**, size_t, size_t);
 size_t getDirEntryModifiedTimeBytes(FILE**, size_t, size_t);
 size_t getDirEntryStartCluster(FILE**, size_t, size_t);
 size_t getDirEntryFileSize(FILE**, size_t, size_t);
-size_t getFirstFreeDirEntry(FILE**, size_t);
 
 void setDirEntryAttr(FILE**, size_t, size_t, char);
 void setDirEntryFileName(FILE**, size_t, size_t, char*);

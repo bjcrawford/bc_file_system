@@ -16,15 +16,15 @@
  *
  *        (bytes) | value 
  *       ---------------------------------------------------------------
- *        (0)     | A byte holding the attributes of the file/folder:
+ *        (0)     | A byte holding the attributes of the file/directory:
  *                    Bit 0: 0 for unused entry, 1 for used entry
  *                    Bit 1: 0 for R/O, 1 for R/W
- *                    Bit 2: 1 for hidden file/folder
+ *                    Bit 2: 1 for hidden file/directory
  *                    Bit 3: 1 for system file
  *                    Bit 4: 1 for subdirectory
  *                    The remaining bits are unused
- *        (1-12)  | The file/folder name (12 chars max)
- *        (13-15) | The file/folder extension (3 chars max)
+ *        (1-12)  | The file/directory name (12 chars max)
+ *        (13-15) | The file/directory extension (3 chars max)
  *        (16-19) | Creation date/time
  *                    Bits 0-5:   Year - 1985
  *                    Bits 6-9:   Month
@@ -48,21 +48,32 @@
 #include "bc_dir_operations.h"
 
 /**
- * Creates a directory entry in the given directory cluster
+ * Returns the starting cluster of the root directory
+ *
+ * @param  virDrive A pointer to the file pointer of the virtual drive
+ * @return          The cluster address of the root diretory
+ */
+size_t getRootDirectoryCluster(FILE** virDrive)
+{
+	return getFirstClusterOfRootDir(virDrive);
+}
+
+/**
+ * Creates a directory entry for a file in the given directory cluster
  *
  * @param  virDrive    A pointer to the file pointer of the virtual drive
  * @param  clusterAddr The starting cluster of the directory
- * @param  attr        The attributes of the file/folder (one byte)
+ * @param  attr        The attributes of the file (one byte)
  *                       Bit 0: 0 for unused entry, 1 for used entry
  *                       Bit 1: 0 for R/O, 1 for R/W
- *                       Bit 2: 1 for hidden file/folder
+ *                       Bit 2: 1 for hidden file/directory
  *                       Bit 3: 1 for system file
  *                       Bit 4: 1 for subdirectory
  *                       The remaining bits are unused
- * @param  name        The name of the file/folder (maximum 12 characters)
+ * @param  name        The name of the file/directory (maximum 12 characters)
  * @param  ext         The extension of the file (maximum 3 characters)          
  */
-void createDirEntry(FILE **virDrive, size_t clusterAddr,
+void createDirFileEntry(FILE **virDrive, size_t clusterAddr,
 	                     char attr, char *name, char *ext)
 {
 	size_t loc = getFirstFreeDirEntry(virDrive, clusterAddr);
@@ -91,6 +102,51 @@ void createDirEntry(FILE **virDrive, size_t clusterAddr,
 }
 
 /**
+ * Creates a directory entry for a subdirectory in the given directory cluster
+ *
+ * @param  virDrive    A pointer to the file pointer of the virtual drive
+ * @param  clusterAddr The starting cluster of the parent directory
+ * @param  attr        The attributes of the directory (one byte)
+ *                       Bit 0: 0 for unused entry, 1 for used entry
+ *                       Bit 1: 0 for R/O, 1 for R/W
+ *                       Bit 2: 1 for hidden directory
+ *                       Bit 3: 1 for system directory
+ *                       Bit 4: 1 for subdirectory
+ *                       The remaining bits are unused
+ * @param  name        The name of the directory (maximum 12 characters)
+ * @return             The starting cluster address of the subdirectory
+ */
+size_t createDirSubEntry(FILE **virDrive, size_t clusterAddr, char attr, char *name)
+{
+	size_t startCluster = getNextFreeCluster(virDrive);
+	setFATEntry(virDrive, startCluster, 0xffffffff);
+	findAndSetNextFreeCluster(virDrive);
+
+	size_t loc = getFirstFreeDirEntry(virDrive, clusterAddr);
+	size_t currentTime = encodeTimeBytes();
+
+	/* Set attributes */
+	writeNum(virDrive, loc, 1, attr);
+
+	/* Set name */
+	writeStr(virDrive, loc + 1, 12, name);
+
+	/* Set create date/time */
+	writeNum(virDrive, loc + 16, 4, currentTime);
+
+	/* Set modified date/time */
+	writeNum(virDrive, loc + 20, 4, currentTime);
+
+	/* Set first cluster of directory */
+	writeNum(virDrive, loc + 24, 4, startCluster);
+
+	/* Set file size */
+	writeNum(virDrive, loc + 28, 4, 0);
+
+	return startCluster;
+}
+
+/**
  * Returns a string containing a listing of the contents of a
  * directory. 
  *
@@ -107,7 +163,7 @@ char *getDirectoryListing(FILE **virDrive, size_t clusterAddr)
 	size_t entryAddr = 0;
 	size_t currentCluster = clusterAddr;
 
-	/* Determine the number of files/folders in the directory */
+	/* Determine the number of files/directorys in the directory */
 	while(!end)
 	{
 		attr = getDirEntryAttr(virDrive, currentCluster, entryAddr);
@@ -171,6 +227,56 @@ char *getDirectoryListing(FILE **virDrive, size_t clusterAddr)
 	}
 
 	return listing;
+}
+
+/**
+ * Returns the directory cluster address of a directory. Searches through a 
+ * given directory for a subdirectory of a given name. Returns if no matching 
+ * directory is found.
+ *
+ * @param  virDrive           A pointer to the file pointer of the virtual drive
+ * @param  currentClusterAddr The cluster address of the directory to search
+ * @param  dirName            The name of the directory to locate
+ * @return                    The cluster address of the directory to locate
+ */
+size_t getDirectoryClusterAddress(FILE **virDrive, size_t currentClusterAddr, char *dirName)
+{
+	size_t dirClusterAddress = 0;
+	char attr;
+	char *name;
+	int end = 0;
+	int found = 0;
+	size_t entryAddr = 0;
+	size_t currentCluster = currentClusterAddr;
+	size_t nextCluster = 0;
+
+	while(!found && !end)
+	{
+		attr = getDirEntryAttr(virDrive, currentCluster, entryAddr);
+		if(!(attr & 0x1))
+			end = 1;
+		else if(attr & 0x10) /* Subdirectory */
+		{
+			name = getDirEntryFileName(virDrive, currentCluster, entryAddr);
+			if(strcmp(name, dirName) == 0)
+			{
+				found = 1;
+				dirClusterAddress = getDirEntryStartCluster(virDrive, currentCluster, entryAddr);
+			}
+		}
+		entryAddr++;
+	
+		if(entryAddr > 15)
+		{
+			nextCluster = getFATEntry(virDrive, currentCluster);
+			if(nextCluster == 0xffffffff)
+				nextCluster = addClusterToChain(virDrive, currentCluster);
+			currentCluster = nextCluster;
+			entryAddr = 0;
+		}
+	}
+
+	return dirClusterAddress;
 }
 
 /**

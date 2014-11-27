@@ -58,7 +58,8 @@
  	createDirFileEntry(&vd, rootAddr, 0x3, "testfile13", "txt");
  	createDirFileEntry(&vd, rootAddr, 0x3, "testfile14", "txt");
  	
- 	size_t subFolder0Addr = createDirSubEntry(&vd, getFirstClusterOfRootDir(&vd), 0x13, "folder0");
+ 	size_t subFolder0EntryAddr = createDirSubEntry(&vd, rootAddr, 0x13, "folder0");
+ 	size_t subFolder0Addr = getDirEntryStartCluster(&vd, rootAddr, subFolder0EntryAddr);
  	createDirFileEntry(&vd, subFolder0Addr, 0x3, "file0", "txt");
  	createDirFileEntry(&vd, subFolder0Addr, 0x3, "file1", "txt");
  	createDirFileEntry(&vd, subFolder0Addr, 0x3, "file2", "txt");
@@ -89,11 +90,11 @@
  	createDirFileEntry(&vd, rootAddr, 0x3, "testfile38", "txt");
  	createDirFileEntry(&vd, rootAddr, 0x3, "testfile39", "txt");
 
- 	fprintf(stdout, "Root Directory Listing: \n%s", getDirectoryListing(&vd, getFirstClusterOfRootDir(&vd)));
- 	fprintf(stdout, "folder0 Directory Listing: \n%s", getDirectoryListing(&vd, 33));
+ 	fprintf(stdout, "Root Directory Listing: \n%s", getDirectoryListing(&vd, rootAddr));
+ 	fprintf(stdout, "folder0 Directory Listing: \n%s", getDirectoryListing(&vd, subFolder0Addr));
 
  	fprintf(stdout, "Directory cluster address of folder0: %ld\n", 
- 		    getDirectoryClusterAddress(&vd, 32, "folder0"));
+ 		    getDirectoryClusterAddress(&vd, rootAddr, "folder0"));
 
 
  	fprintf(stdout, "\n===================================================\n");
@@ -110,11 +111,15 @@
  	fprintf(stdout, "===================================================\n\n");
 
  	openFile(&vd, "one/two/three/brett.txt");
- 	fprintf(stdout, "Root Directory Listing: \n%s", getDirectoryListing(&vd, getFirstClusterOfRootDir(&vd)));
- 	size_t subOneAddr = getDirectoryClusterAddress(&vd, getFirstClusterOfRootDir(&vd), "one");
+
+ 	fprintf(stdout, "Root Directory Listing: \n%s", getDirectoryListing(&vd, rootAddr));
+ 	
+ 	size_t subOneAddr = getDirectoryClusterAddress(&vd, rootAddr, "one");
  	fprintf(stdout, "one Directory Listing: \n%s", getDirectoryListing(&vd, subOneAddr));
+
  	size_t subTwoAddr = getDirectoryClusterAddress(&vd, subOneAddr, "two");
  	fprintf(stdout, "two Directory Listing: \n%s", getDirectoryListing(&vd, subTwoAddr));
+
  	size_t subThreeAddr = getDirectoryClusterAddress(&vd, subTwoAddr, "three");
  	fprintf(stdout, "three Directory Listing: \n%s", getDirectoryListing(&vd, subThreeAddr));
 
@@ -131,6 +136,7 @@
  	fprintf(stdout, "Next Free Cluster: %zu\n", getNextFreeCluster(&vd));
  	fprintf(stdout, "Size Of Drive: %zu\n", getSizeOfDrive(&vd));
  	fprintf(stdout, "===================================================\n\n");
+
  	/*
  	size_t t = getDirEntryCreateTimeBytes(&vd, getFirstClusterOfRootDir(&vd), 0);
  	struct tm *dt = decodeTimeBytes(t);

@@ -23,7 +23,7 @@
 #include "bc_fat_operations.h"
 
 size_t getRootDirectoryCluster(FILE**);
-void createDirFileEntry(FILE**, size_t, char, char*, char*);
+size_t createDirFileEntry(FILE**, size_t, char, char*, char*);
 size_t createDirSubEntry(FILE**, size_t, char, char*);
 char *getDirectoryListing(FILE**, size_t);
 size_t getDirectoryClusterAddress(FILE**, size_t, char*);

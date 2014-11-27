@@ -82,7 +82,7 @@ size_t getRootDirectoryCluster(FILE** virDrive)
 size_t createDirFileEntry(FILE **virDrive, size_t clusterAddr,
 	                     char attr, char *name, char *ext)
 {
-	size_t entryAddr = getFirstFreeDirEntryLoc(virDrive, clusterAddr);
+	size_t entryAddr = getFirstFreeDirEntryAddr(virDrive, clusterAddr);
 	size_t loc = getDirEntryLoc(virDrive, clusterAddr, entryAddr);
 	size_t currentTime = encodeTimeBytes();
 
@@ -131,7 +131,8 @@ size_t createDirSubEntry(FILE **virDrive, size_t clusterAddr, char attr, char *n
 	setFATEntry(virDrive, startCluster, 0xffffffff);
 	findAndSetNextFreeCluster(virDrive);
 
-	size_t loc = getFirstFreeDirEntry(virDrive, clusterAddr);
+	size_t entryAddr = getFirstFreeDirEntryAddr(virDrive, clusterAddr);
+	size_t loc = getDirEntryLoc(virDrive, clusterAddr, entryAddr);
 	size_t currentTime = encodeTimeBytes();
 
 	/* Set attributes */
@@ -152,7 +153,7 @@ size_t createDirSubEntry(FILE **virDrive, size_t clusterAddr, char attr, char *n
 	/* Set file size */
 	writeNum(virDrive, loc + 28, 4, 0);
 
-	return startCluster;
+	return entryAddr;
 }
 
 /**

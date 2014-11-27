@@ -33,7 +33,10 @@ BC_FILE *openFile(FILE **virDrive, char *filePath)
 		{
 			nextClusterAddr = getDirectoryClusterAddress(virDrive, clusterAddr, p[i]);
 			if(nextClusterAddr == 0)
-				nextClusterAddr = createDirSubEntry(virDrive, clusterAddr, 0x13, p[i]);
+			{
+				size_t entryAddr = createDirSubEntry(virDrive, clusterAddr, 0x13, p[i]);
+				nextClusterAddr = getDirEntryStartCluster(virDrive, clusterAddr, entryAddr);
+			}
 			clusterAddr = nextClusterAddr;
 			i++;
 		}
@@ -55,7 +58,7 @@ BC_FILE *openFile(FILE **virDrive, char *filePath)
 	fp->write = 1;
 	fp->hidden = 0;
 	fp->subDir = 0;
-	
+
 	fp->fileName = getDirEntryFileName(virDrive, clusterAddr, entryAddr);
 	fp->fileExt = getDirEntryFileExt(virDrive, clusterAddr, entryAddr);
 	fp->createDate = getDirEntryCreateTimeBytes(virDrive, clusterAddr, entryAddr);

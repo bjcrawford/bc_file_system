@@ -41,6 +41,11 @@
  *                    Bits 26-31: Second
  *        (24-27) | First cluster of file (empty file: 0)
  *        (28-31) | The file size in bytes
+ *
+ *     The entries will be organized within a directory cluster chain
+ *     with entry addresses ranging from 0 upwards. The entry address
+ *     refers to an entries position relative to the entire directory
+ *     cluster chain.
  *  
  *  This program was written for use in Linux.
 */
@@ -166,7 +171,7 @@ char *getDirectoryListing(FILE **virDrive, size_t clusterAddr)
 	/* Determine the number of files/directorys in the directory */
 	while(!end)
 	{
-		attr = getDirEntryAttr(virDrive, currentCluster, entryAddr);
+		attr = getDirEntryAttr(virDrive, clusterAddr, entryAddr);
 		if((attr & 0x1) ^ 0x1)
 			end = 1;
 		else
@@ -174,15 +179,11 @@ char *getDirectoryListing(FILE **virDrive, size_t clusterAddr)
 			entryAddr++;
 			count++;
 		
-			if(entryAddr > 15)
+			if(entryAddr % 16 == 0)
 			{
 				currentCluster = getFATEntry(virDrive, currentCluster);
-				if(currentCluster != 0xffffffff && currentCluster != 0x0)
-					entryAddr = 0;
-				else if(currentCluster == 0xffffffff) /* No more entries to check */
+				if(currentCluster == 0xffffffff) /* No more entries to check */
 					end = 1;
-				else /* Something is wrong */
-					fprintf(stderr, "Invalid value from getFatEntry\n");
 			}
 		}
 	}
@@ -199,29 +200,25 @@ char *getDirectoryListing(FILE **virDrive, size_t clusterAddr)
 	/* Record file info for each directory listing */
 	while(!end)
 	{
-		attr = getDirEntryAttr(virDrive, currentCluster, entryAddr);
+		attr = getDirEntryAttr(virDrive, clusterAddr, entryAddr);
 		if((attr & 0x1) ^ 0x1)
 			end = 1;
 		else
 		{
-			strcat(listing, getDirEntryFileName(virDrive, currentCluster, entryAddr));
+			strcat(listing, getDirEntryFileName(virDrive, clusterAddr, entryAddr));
 			if((attr & 0x10) ^ 0x10)
 			{
 				strcat(listing, ".");
-				strcat(listing, getDirEntryFileExt(virDrive, currentCluster, entryAddr));
+				strcat(listing, getDirEntryFileExt(virDrive, clusterAddr, entryAddr));
 			}
 			strcat(listing, "\n");
 		
 			entryAddr++;
-			if(entryAddr > 15)
+			if(entryAddr % 16 == 0)
 			{
 				currentCluster = getFATEntry(virDrive, currentCluster);
-				if(currentCluster != 0xffffffff && currentCluster != 0x0)
-					entryAddr = 0;
-				else if(currentCluster == 0xffffffff) /* No more entries to check */
+				if(currentCluster == 0xffffffff) /* No more entries to check */
 					end = 1;
-				else /* Something is wrong */
-					fprintf(stderr, "Invalid value from getFatEntry\n");
 			}
 		}
 	}
@@ -252,27 +249,26 @@ size_t getDirectoryClusterAddress(FILE **virDrive, size_t currentClusterAddr, ch
 
 	while(!found && !end)
 	{
-		attr = getDirEntryAttr(virDrive, currentCluster, entryAddr);
+		attr = getDirEntryAttr(virDrive, currentClusterAddr, entryAddr);
 		if(!(attr & 0x1))
 			end = 1;
 		else if(attr & 0x10) /* Subdirectory */
 		{
-			name = getDirEntryFileName(virDrive, currentCluster, entryAddr);
+			name = getDirEntryFileName(virDrive, currentClusterAddr, entryAddr);
 			if(strcmp(name, dirName) == 0)
 			{
 				found = 1;
-				dirClusterAddress = getDirEntryStartCluster(virDrive, currentCluster, entryAddr);
+				dirClusterAddress = getDirEntryStartCluster(virDrive, currentClusterAddr, entryAddr);
 			}
 		}
 		entryAddr++;
 	
-		if(entryAddr > 15)
+		if(entryAddr % 16 == 0)
 		{
 			nextCluster = getFATEntry(virDrive, currentCluster);
 			if(nextCluster == 0xffffffff)
 				nextCluster = addClusterToChain(virDrive, currentCluster);
 			currentCluster = nextCluster;
-			entryAddr = 0;
 		}
 	}
 
@@ -360,20 +356,40 @@ size_t getDataStartLoc(FILE **virDrive)
 
 /**
  * Returns the offset (in bytes) from the beginning of the virtual drive
- * to the start of the given directory cluster entry.
+ * to the start of the given directory cluster entry. Returns 0 if the 
+ * entry address is invalid.
  *
  * @param  virDrive   A pointer to the file pointer of the virtual drive
- * @param  dirCluster The address of the directory cluster containing the entry
+ * @param  dirCluster The starting cluster address of the directory cluster 
+ *                    containing the entry
  * @param  entryAddr  The address of the entry within the directory cluster
- * @return            The drive offset of the given entry in bytes
+ * @return            The drive offset of the given entry in bytes, 0 on error
  */
 size_t getDirEntryLoc(FILE **virDrive, size_t dirCluster, size_t entryAddr)
 {
+	size_t entry = 0;
 	size_t loc = 0;
+	size_t currentCluster = dirCluster;
+	size_t nextCluster = 0;
+
 	/* Skip to the given dir cluster */
-	loc += getBytesPerCluster(virDrive) * dirCluster;
-	/* Skip to the given entry */
-	loc += 32 * entryAddr;
+	loc += getBytesPerCluster(virDrive) * currentCluster;
+
+	while(entry < entryAddr)
+	{
+		entry++;
+		loc += 32;
+		if(entry % 16 == 0)
+		{
+			nextCluster = getFATEntry(virDrive, currentCluster);
+			loc = getBytesPerCluster(virDrive) * nextCluster;
+			if(nextCluster == 0xffffffff)
+				loc = 0;
+			else
+				loc = getBytesPerCluster(virDrive) * nextCluster;
+			currentCluster = nextCluster;
+		}
+	}
 
 	return loc;
 }
@@ -503,11 +519,11 @@ size_t getFirstFreeDirEntry(FILE **virDrive, size_t dirCluster)
 	size_t bytesPerCluster = getBytesPerCluster(virDrive);
 
 	/* Skip to directory cluster */
-	loc += bytesPerCluster * currentCluster;
+	loc += bytesPerCluster * dirCluster;
 
 	while(!found)
 	{
-		attr = getDirEntryAttr(virDrive, currentCluster, entryAddr);
+		attr = getDirEntryAttr(virDrive, dirCluster, entryAddr);
 		if((attr & 0x1) ^ 0x1)
 			found = 1;
 		else
@@ -515,14 +531,13 @@ size_t getFirstFreeDirEntry(FILE **virDrive, size_t dirCluster)
 			loc += 32;
 			entryAddr++;
 		
-			if(entryAddr > 15)
+			if(entryAddr % 16 == 0)
 			{
 				nextCluster = getFATEntry(virDrive, currentCluster);
 				if(nextCluster == 0xffffffff)
 					nextCluster = addClusterToChain(virDrive, currentCluster);
 				loc = bytesPerCluster * nextCluster;
 				currentCluster = nextCluster;
-				entryAddr = 0;
 			}
 		}
 	}

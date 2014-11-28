@@ -12,144 +12,82 @@
 
 #include "bc_file_system.h"
 
- typedef struct 
- {
- 	FILE *virDisk;
- } VirtualDrive;
+void printBootClusterInfo(FILE**);
 
- int main(int argc, char **argv)
- {
- 	FILE *vd;
+int main(int argc, char **argv)
+{
+	FILE *vd;
 
- 	if(!openVirDrive(&vd, "Drive2MB"))
- 		fprintf(stderr, "Error opening drive");
- 	fprintf(stdout, "VDrive Opened\n");
+	if(!openVirDrive(&vd, "Drive2MB"))
+		fprintf(stderr, "Error opening drive");
+	fprintf(stdout, "VDrive Opened\n");
 
- 	initVirDrive(&vd, "VDrive");
+	initVirDrive(&vd, "VDrive");
 
- 	fprintf(stdout, "\n===================================================\n");
- 	fprintf(stdout, "Initialized: %zu\n", getInitialized(&vd));
- 	fprintf(stdout, "Drive Label: %s\n", getDriveLabel(&vd));
- 	fprintf(stdout, "Bytes Per Cluster: %zu\n", getBytesPerCluster(&vd));
- 	fprintf(stdout, "Number Of Reserved Clusters: %zu\n", getNumberOfReservedClusters(&vd));
- 	fprintf(stdout, "Number Of Clusters On Drive: %zu\n", getNumberOfClustersOnDrive(&vd));
- 	fprintf(stdout, "Number Of Clusters Per FAT: %zu\n", getNumberOfClustersPerFAT(&vd));
- 	fprintf(stdout, "First Cluster Of Root Dir: %zu\n", getFirstClusterOfRootDir(&vd));
- 	fprintf(stdout, "Number Of Free Clusters: %zu\n", getNumberOfFreeClusters(&vd));
- 	fprintf(stdout, "Next Free Cluster: %zu\n", getNextFreeCluster(&vd));
- 	fprintf(stdout, "Size Of Drive: %zu\n", getSizeOfDrive(&vd));
- 	fprintf(stdout, "===================================================\n\n");
+	printBootClusterInfo(&vd);
 
- 	size_t rootAddr = getFirstClusterOfRootDir(&vd);
+	BC_FILE *file0 = openFile(&vd, "file0.txt");
+	
+	createDirectory(&vd, "folder0");
 
- 	createDirFileEntry(&vd, rootAddr, 0x3, "testfile0", "txt");
- 	createDirFileEntry(&vd, rootAddr, 0x3, "testfile1", "txt");
- 	createDirFileEntry(&vd, rootAddr, 0x3, "testfile2", "txt");
- 	createDirFileEntry(&vd, rootAddr, 0x3, "testfile3", "txt");
- 	createDirFileEntry(&vd, rootAddr, 0x3, "testfile4", "txt");
- 	createDirFileEntry(&vd, rootAddr, 0x3, "testfile5", "txt");
- 	createDirFileEntry(&vd, rootAddr, 0x3, "testfile6", "txt");
- 	createDirFileEntry(&vd, rootAddr, 0x3, "testfile7", "txt");
- 	createDirFileEntry(&vd, rootAddr, 0x3, "testfile8", "txt");
- 	createDirFileEntry(&vd, rootAddr, 0x3, "testfile9", "txt");
- 	createDirFileEntry(&vd, rootAddr, 0x3, "testfile10", "txt");
- 	createDirFileEntry(&vd, rootAddr, 0x3, "testfile11", "txt");
- 	createDirFileEntry(&vd, rootAddr, 0x3, "testfile12", "txt");
- 	createDirFileEntry(&vd, rootAddr, 0x3, "testfile13", "txt");
- 	createDirFileEntry(&vd, rootAddr, 0x3, "testfile14", "txt");
- 	
- 	size_t subFolder0EntryAddr = createDirSubEntry(&vd, rootAddr, 0x13, "folder0");
- 	size_t subFolder0Addr = getDirEntryStartCluster(&vd, rootAddr, subFolder0EntryAddr);
- 	createDirFileEntry(&vd, subFolder0Addr, 0x3, "file0", "txt");
- 	createDirFileEntry(&vd, subFolder0Addr, 0x3, "file1", "txt");
- 	createDirFileEntry(&vd, subFolder0Addr, 0x3, "file2", "txt");
- 	
- 	createDirFileEntry(&vd, rootAddr, 0x3, "testfile15", "txt");
- 	createDirFileEntry(&vd, rootAddr, 0x3, "testfile16", "txt");
- 	createDirFileEntry(&vd, rootAddr, 0x3, "testfile17", "txt");
- 	createDirFileEntry(&vd, rootAddr, 0x3, "testfile18", "txt");
- 	createDirFileEntry(&vd, rootAddr, 0x3, "testfile19", "txt");
- 	createDirFileEntry(&vd, rootAddr, 0x3, "testfile20", "txt");
- 	createDirFileEntry(&vd, rootAddr, 0x3, "testfile21", "txt");
- 	createDirFileEntry(&vd, rootAddr, 0x3, "testfile22", "txt");
- 	createDirFileEntry(&vd, rootAddr, 0x3, "testfile23", "txt");
- 	createDirFileEntry(&vd, rootAddr, 0x3, "testfile24", "txt");
- 	createDirFileEntry(&vd, rootAddr, 0x3, "testfile25", "txt");
- 	createDirFileEntry(&vd, rootAddr, 0x3, "testfile26", "txt");
- 	createDirFileEntry(&vd, rootAddr, 0x3, "testfile27", "txt");
- 	createDirFileEntry(&vd, rootAddr, 0x3, "testfile28", "txt");
- 	createDirFileEntry(&vd, rootAddr, 0x3, "testfile29", "txt");
- 	createDirFileEntry(&vd, rootAddr, 0x3, "testfile30", "txt");
- 	createDirFileEntry(&vd, rootAddr, 0x3, "testfile31", "txt");
- 	createDirFileEntry(&vd, rootAddr, 0x3, "testfile32", "txt");
- 	createDirFileEntry(&vd, rootAddr, 0x3, "testfile33", "txt");
- 	createDirFileEntry(&vd, rootAddr, 0x3, "testfile34", "txt");
- 	createDirFileEntry(&vd, rootAddr, 0x3, "testfile35", "txt");
- 	createDirFileEntry(&vd, rootAddr, 0x3, "testfile36", "txt");
- 	createDirFileEntry(&vd, rootAddr, 0x3, "testfile37", "txt");
- 	createDirFileEntry(&vd, rootAddr, 0x3, "testfile38", "txt");
- 	createDirFileEntry(&vd, rootAddr, 0x3, "testfile39", "txt");
+	BC_FILE *subfile0 = openFile(&vd, "folder0/subfile0.txt");
 
- 	fprintf(stdout, "Root Directory Listing: \n%s", getDirectoryListing(&vd, rootAddr));
- 	fprintf(stdout, "folder0 Directory Listing: \n%s", getDirectoryListing(&vd, subFolder0Addr));
+	fprintf(stdout, "Root Directory Listing: \n%s", getDirectoryListing(&vd, "root"));
+	fprintf(stdout, "folder0 Directory Listing: \n%s", getDirectoryListing(&vd, "folder0"));
+	
+	printBootClusterInfo(&vd);
 
- 	fprintf(stdout, "Directory cluster address of folder0: %ld\n", 
- 		    getDirectoryClusterAddress(&vd, rootAddr, "folder0"));
+	BC_FILE *brett = openFile(&vd, "one/two/three/brett.txt");
 
+	fprintf(stdout, "Root Directory Listing: \n%s", getDirectoryListing(&vd, "root"));
+	fprintf(stdout, "one Directory Listing: \n%s", getDirectoryListing(&vd, "one"));
+	fprintf(stdout, "two Directory Listing: \n%s", getDirectoryListing(&vd, "one/two"));
+	fprintf(stdout, "three Directory Listing: \n%s", getDirectoryListing(&vd, "one/two/three"));
 
- 	fprintf(stdout, "\n===================================================\n");
- 	fprintf(stdout, "Initialized: %zu\n", getInitialized(&vd));
- 	fprintf(stdout, "Drive Label: %s\n", getDriveLabel(&vd));
- 	fprintf(stdout, "Bytes Per Cluster: %zu\n", getBytesPerCluster(&vd));
- 	fprintf(stdout, "Number Of Reserved Clusters: %zu\n", getNumberOfReservedClusters(&vd));
- 	fprintf(stdout, "Number Of Clusters On Drive: %zu\n", getNumberOfClustersOnDrive(&vd));
- 	fprintf(stdout, "Number Of Clusters Per FAT: %zu\n", getNumberOfClustersPerFAT(&vd));
- 	fprintf(stdout, "First Cluster Of Root Dir: %zu\n", getFirstClusterOfRootDir(&vd));
- 	fprintf(stdout, "Number Of Free Clusters: %zu\n", getNumberOfFreeClusters(&vd));
- 	fprintf(stdout, "Next Free Cluster: %zu\n", getNextFreeCluster(&vd));
- 	fprintf(stdout, "Size Of Drive: %zu\n", getSizeOfDrive(&vd));
- 	fprintf(stdout, "===================================================\n\n");
+	char *test69 = "The man in black fled across the desert, and the gunslinger followed.";
 
- 	openFile(&vd, "one/two/three/brett.txt");
+	char *test644 = "The man in black fled across the desert and the gunslinger followed. The desert was the apotheosis of all deserts, huge, standing to the sky for what looked like eternity in all directions. It was white and blinding and waterless and without feature save for the faint, cloudy haze of the mountains which sketched themselves on the horizon and the devil-grass which brought sweet dreams, nightmares, death. An occasional tombstone sign pointed the way, for once the drifted track that cut its way through the thick crust of alkali had been a highway. Coaches and buckas had followed it. The world had moved on since then. The world had emptied.";
+	
+	char *test2066 = "The greatest mystery the universe offers is not life but size. Size encompasses life, and the Tower encompasses size. The child, who is most at home with wonder, says: Daddy, what is above the sky? And the father says: The darkness of space. The child: What is beyond space? The father: The galaxy. The child: Beyond the galaxy? The father: Another galaxy. The child: Beyond the other galaxies? The father: No one knows. You see? Size defeats us. For the fish, the lake in which he lives is the universe. What does the fish think when he is jerked up by the mouth through the silver limits of existence and into a new universe where the air drowns him and the light is blue madness? Where huge bipeds with no gills stuff it into a suffocating box and cover it with wet weeds to die? Or one might take the tip of the pencil and magnify it. One reaches the point where a stunning realization strikes home: The pencil tip is not solid; it is composed of atoms which whirl and revolve like a trillion demon planets. What seems solid to us is actually only a loose net held together by gravity. Viewed at their actual size, the distances between these atoms might become league, gulfs, aeons. The atoms themselves are composed of nuclei and revolving protons and electrons. One may step down further to subatomic particles. And then to what? Tachyons? Nothing? Of course not. Everything in the universe denies nothing; to suggest an ending is the one absurdity. If you fell outward to the limit of the universe, would you find a board fence and signs reading DEAD END? No. You might find something hard and rounded, as the chick must see the egg from the inside. And if you should peck through the shell (or find a door), what great and torrential light might shine through your opening at the end of space? Might you look through and discover our entire universe is but part of one atom on a blade of grass? Might you be forced to think that by burning a twig you incinerate an eternity of eternities? That existence rises not to one infinite but to an infinity of them?";
 
- 	fprintf(stdout, "Root Directory Listing: \n%s", getDirectoryListing(&vd, rootAddr));
- 	
- 	size_t subOneAddr = getDirectoryClusterAddress(&vd, rootAddr, "one");
- 	fprintf(stdout, "one Directory Listing: \n%s", getDirectoryListing(&vd, subOneAddr));
+	writeFile(&vd, test69, 69, brett);
+	writeFile(&vd, test644, 644, file0);
+	writeFile(&vd, test2066, 2066, subfile0);
 
- 	size_t subTwoAddr = getDirectoryClusterAddress(&vd, subOneAddr, "two");
- 	fprintf(stdout, "two Directory Listing: \n%s", getDirectoryListing(&vd, subTwoAddr));
+	bc_rewind(brett);
+	char *strRead1 = calloc(70, sizeof(char));
+	readFile(&vd, strRead1, 0, 69, brett);
+	printf("%s\n", strRead1);
 
- 	size_t subThreeAddr = getDirectoryClusterAddress(&vd, subTwoAddr, "three");
- 	fprintf(stdout, "three Directory Listing: \n%s", getDirectoryListing(&vd, subThreeAddr));
+	bc_rewind(file0);
+	char *strRead2 = calloc(645, sizeof(char));
+	readFile(&vd, strRead2, 0, 644, file0);
+	printf("%s\n", strRead2);
 
+	bc_rewind(subfile0);
+	char *strRead3 = calloc(2067, sizeof(char));
+	readFile(&vd, strRead3, 0, 2066, subfile0);
+	printf("%s\n", strRead3);
 
- 	fprintf(stdout, "\n===================================================\n");
- 	fprintf(stdout, "Initialized: %zu\n", getInitialized(&vd));
- 	fprintf(stdout, "Drive Label: %s\n", getDriveLabel(&vd));
- 	fprintf(stdout, "Bytes Per Cluster: %zu\n", getBytesPerCluster(&vd));
- 	fprintf(stdout, "Number Of Reserved Clusters: %zu\n", getNumberOfReservedClusters(&vd));
- 	fprintf(stdout, "Number Of Clusters On Drive: %zu\n", getNumberOfClustersOnDrive(&vd));
- 	fprintf(stdout, "Number Of Clusters Per FAT: %zu\n", getNumberOfClustersPerFAT(&vd));
- 	fprintf(stdout, "First Cluster Of Root Dir: %zu\n", getFirstClusterOfRootDir(&vd));
- 	fprintf(stdout, "Number Of Free Clusters: %zu\n", getNumberOfFreeClusters(&vd));
- 	fprintf(stdout, "Next Free Cluster: %zu\n", getNextFreeCluster(&vd));
- 	fprintf(stdout, "Size Of Drive: %zu\n", getSizeOfDrive(&vd));
- 	fprintf(stdout, "===================================================\n\n");
+	printBootClusterInfo(&vd);
 
- 	/*
- 	size_t t = getDirEntryCreateTimeBytes(&vd, getFirstClusterOfRootDir(&vd), 0);
- 	struct tm *dt = decodeTimeBytes(t);
+	closeVirDrive(&vd);
 
- 	fprintf(stdout, "Year: %d\n", dt->tm_year);
- 	fprintf(stdout, "Month: %d\n", dt->tm_mon);
- 	fprintf(stdout, "Day: %d\n", dt->tm_mday);
- 	fprintf(stdout, "Hour: %d\n", dt->tm_hour);
- 	fprintf(stdout, "Min: %d\n", dt->tm_min);
- 	fprintf(stdout, "Sec: %d\n", dt->tm_sec);
- 	*/
+    return 0;
+}
 
- 	closeVirDrive(&vd);
-
- 	return 0;
- }
+void printBootClusterInfo(FILE **virDrive)
+{
+	fprintf(stdout, "\n===================================================\n");
+	fprintf(stdout, "Initialized: %zu\n", getInitialized(virDrive));
+	fprintf(stdout, "Drive Label: %s\n", getDriveLabel(virDrive));
+	fprintf(stdout, "Bytes Per Cluster: %zu\n", getBytesPerCluster(virDrive));
+	fprintf(stdout, "Number Of Reserved Clusters: %zu\n", getNumberOfReservedClusters(virDrive));
+	fprintf(stdout, "Number Of Clusters On Drive: %zu\n", getNumberOfClustersOnDrive(virDrive));
+	fprintf(stdout, "Number Of Clusters Per FAT: %zu\n", getNumberOfClustersPerFAT(virDrive));
+	fprintf(stdout, "First Cluster Of Root Dir: %zu\n", getFirstClusterOfRootDir(virDrive));
+	fprintf(stdout, "Number Of Free Clusters: %zu\n", getNumberOfFreeClusters(virDrive));
+	fprintf(stdout, "Next Free Cluster: %zu\n", getNextFreeCluster(virDrive));
+	fprintf(stdout, "Size Of Drive: %zu\n", getSizeOfDrive(virDrive));
+	fprintf(stdout, "===================================================\n\n");
+}

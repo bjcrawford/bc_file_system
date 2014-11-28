@@ -116,13 +116,8 @@ void writeNum(FILE **virDrive, size_t loc, size_t len, size_t num)
  */
 void writeStr(FILE **virDrive, size_t loc, size_t len, char *str)
 {
-	size_t i;
-	char c;
 	fseek(*virDrive, loc, SEEK_SET);
-	for(i = 0; i < len && (c = *str++) != '\0'; i++)
-		fputc(c, *virDrive);
-	while(i++ < len)
-		fputc(0, *virDrive);
+	fwrite(str, sizeof(char), len, *virDrive);
 }
 
 /**
@@ -155,12 +150,9 @@ size_t readNum(FILE **virDrive, size_t loc, size_t len)
  */
 char *readStr(FILE **virDrive, size_t loc, size_t len)
 {
-	size_t i;
 	char *result = (char*) calloc(len + 1, sizeof(char));
-	char *p = result;
 	fseek(*virDrive, loc, SEEK_SET);
-	for(i = 0; i < len; i++)
-		*p++ = fgetc(*virDrive);
-	*p = '\0';
+	fread(result, sizeof(char), len, *virDrive);
+	
 	return result;
 }

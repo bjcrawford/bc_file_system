@@ -15,27 +15,25 @@
 
 #include <stdlib.h>
 
- typedef struct
- {
- 	int used;
- 	int write;
- 	int hidden;
- 	int subDir;
- 	char *fileName;
- 	char *fileExt;
- 	size_t createDate;
- 	size_t modifyDate;
- 	size_t firstClusterAddr;
- 	size_t fileSize;
+typedef struct
+{
+	int used;
+	int write;
+	int hidden;
+	int subDir;
+	char *fileName;
+	char *fileExt;
+	size_t createDate;
+	size_t modifyDate;
+	size_t filePosition;
+	size_t fileSize;
+	size_t startClusterAddr;
+	size_t startLoc;
+	size_t currentClusterAddr;
+	size_t currentLoc;
 
- 	size_t startLoc;
- 	size_t currentLoc;
- 	size_t currentClusterAddr;
- 	size_t endLoc;
- 	size_t endClusterAddr;
- 	size_t numOfClusters;
+} BC_FILE;
 
-
- } BC_FILE;
+void bc_rewind(BC_FILE*);
 
 #endif

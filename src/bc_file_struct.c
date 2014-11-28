@@ -11,3 +11,10 @@
 */
 
 #include "bc_file_struct.h"
+
+void bc_rewind(BC_FILE *file)
+{
+	file->filePosition = 0;
+	file->currentLoc = file->startLoc;
+	file->currentClusterAddr = file->startClusterAddr;
+}

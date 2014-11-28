@@ -39,7 +39,7 @@
  *                    Bits 15-19: Hour
  *                    Bits 20-25: Minute
  *                    Bits 26-31: Second
- *        (24-27) | First cluster of file (empty file: 0)
+ *        (24-27) | Starting cluster of file (empty file: 0)
  *        (28-31) | The file size in bytes
  *
  *     The entries will be organized within a directory cluster chain
@@ -105,7 +105,7 @@ size_t createDirFileEntry(FILE **virDrive, size_t clusterAddr,
 	/* Set modified date/time */
 	writeNum(virDrive, loc + 20, 4, currentTime);
 
-	/* Set first cluster of file */
+	/* Set starting cluster of file */
 	writeNum(virDrive, loc + 24, 4, startCluster);
 
 	/* Set file size */
@@ -151,7 +151,7 @@ size_t createDirSubEntry(FILE **virDrive, size_t clusterAddr, char attr, char *n
 	/* Set modified date/time */
 	writeNum(virDrive, loc + 20, 4, currentTime);
 
-	/* Set first cluster of directory */
+	/* Set starting cluster of directory */
 	writeNum(virDrive, loc + 24, 4, startCluster);
 
 	/* Set file size */
@@ -165,69 +165,113 @@ size_t createDirSubEntry(FILE **virDrive, size_t clusterAddr, char attr, char *n
  * directory. 
  *
  * @param  virDrive    A pointer to the file pointer of the virtual drive
- * @param  clusterAddr The cluster address of the directory
+ * @param  dirPath     The absolute path of the directory
  * @return             A string containing the directory listing
  */
-char *getDirectoryListing(FILE **virDrive, size_t clusterAddr)
+char *getDirectoryListing(FILE **virDrive, char *dirPath)
 {
 	char *listing;
-	char attr;
-	int end = 0;
-	size_t count= 0;
-	size_t entryAddr = 0;
-	size_t currentCluster = clusterAddr;
+	char *dir = (char*) calloc(13, sizeof(char));
+	size_t clusterAddr;
+	size_t nextClusterAddr;
 
-	/* Determine the number of files/directorys in the directory */
-	while(!end)
+	if(strcmp_igncase(dirPath, "root") == 0)
 	{
-		attr = getDirEntryAttr(virDrive, clusterAddr, entryAddr);
-		if((attr & 0x1) ^ 0x1)
-			end = 1;
-		else
+		clusterAddr = getRootDirectoryCluster(virDrive);
+	}
+	else if(strchr(dirPath, '/') != NULL)
+	{
+		clusterAddr = getRootDirectoryCluster(virDrive);
+		char **path = chop(dirPath, '/');
+		char **p = path;
+		int i = 0;
+		while(p[i] != NULL && p[i+1] != NULL)
 		{
-			entryAddr++;
-			count++;
-		
-			if(entryAddr % 16 == 0)
+			nextClusterAddr = getDirectoryClusterAddress(virDrive, clusterAddr, p[i]);
+			if(nextClusterAddr == 0)
 			{
-				currentCluster = getFATEntry(virDrive, currentCluster);
-				if(currentCluster == 0xffffffff) /* No more entries to check */
-					end = 1;
+				size_t entryAddr = createDirSubEntry(virDrive, clusterAddr, 0x13, p[i]);
+				nextClusterAddr = getDirEntryStartCluster(virDrive, clusterAddr, entryAddr);
 			}
+			clusterAddr = nextClusterAddr;
+			i++;
 		}
+		strcpy(dir, p[i]);
+		clusterAddr = getDirectoryClusterAddress(virDrive, clusterAddr, dir);
+	}
+	else
+	{
+		strcpy(dir, dirPath);
+		clusterAddr = getDirectoryClusterAddress(virDrive, getRootDirectoryCluster(virDrive), dir);
 	}
 
-	/* Allocate space for the listing string */
-	listing = calloc(17 * count, sizeof(char));
-	strcpy(listing, "");
 
-	/* Reset iteration variables */
-	end = 0;
-	entryAddr = 0;
-	currentCluster = clusterAddr;
-
-	/* Record file info for each directory listing */
-	while(!end)
+	if(clusterAddr == 0)
 	{
-		attr = getDirEntryAttr(virDrive, clusterAddr, entryAddr);
-		if((attr & 0x1) ^ 0x1)
-			end = 1;
-		else
+		/* Directory not found */
+		listing = calloc(25, sizeof(char));
+		strcpy(listing, "Directory not found\n");
+	}
+	else
+	{
+		char attr;
+		int end = 0;
+		size_t count= 0;
+		size_t entryAddr = 0;
+		size_t currentCluster = clusterAddr;
+
+		/* Determine the number of files/directorys in the directory */
+		while(!end)
 		{
-			strcat(listing, getDirEntryFileName(virDrive, clusterAddr, entryAddr));
-			if((attr & 0x10) ^ 0x10)
+			attr = getDirEntryAttr(virDrive, clusterAddr, entryAddr);
+			if((attr & 0x1) ^ 0x1)
+				end = 1;
+			else
 			{
-				strcat(listing, ".");
-				strcat(listing, getDirEntryFileExt(virDrive, clusterAddr, entryAddr));
+				entryAddr++;
+				count++;
+			
+				if(entryAddr % 16 == 0)
+				{
+					currentCluster = getFATEntry(virDrive, currentCluster);
+					if(currentCluster == 0xffffffff) /* No more entries to check */
+						end = 1;
+				}
 			}
-			strcat(listing, "\n");
-		
-			entryAddr++;
-			if(entryAddr % 16 == 0)
+		}
+
+		/* Allocate space for the listing string */
+		listing = calloc(17 * count, sizeof(char));
+		strcpy(listing, "");
+
+		/* Reset iteration variables */
+		end = 0;
+		entryAddr = 0;
+		currentCluster = clusterAddr;
+
+		/* Record file info for each directory listing */
+		while(!end)
+		{
+			attr = getDirEntryAttr(virDrive, clusterAddr, entryAddr);
+			if((attr & 0x1) ^ 0x1)
+				end = 1;
+			else
 			{
-				currentCluster = getFATEntry(virDrive, currentCluster);
-				if(currentCluster == 0xffffffff) /* No more entries to check */
-					end = 1;
+				strcat(listing, getDirEntryFileName(virDrive, clusterAddr, entryAddr));
+				if((attr & 0x10) ^ 0x10)
+				{
+					strcat(listing, ".");
+					strcat(listing, getDirEntryFileExt(virDrive, clusterAddr, entryAddr));
+				}
+				strcat(listing, "\n");
+			
+				entryAddr++;
+				if(entryAddr % 16 == 0)
+				{
+					currentCluster = getFATEntry(virDrive, currentCluster);
+					if(currentCluster == 0xffffffff) /* No more entries to check */
+						end = 1;
+				}
 			}
 		}
 	}
@@ -347,10 +391,10 @@ struct tm *decodeTimeBytes(size_t timeBytes)
 
 /**
  * Returns the offset (in bytes) from the beginning of the virtual drive
- * to the start of the first data cluster.
+ * to the start of the starting data cluster.
  *
  * @param  virDrive A pointer to the file pointer of the virtual drive
- * @return          The drive offset of the first data cluster in bytes
+ * @return          The drive offset of the starting data cluster in bytes
  */
 size_t getDataStartLoc(FILE **virDrive)
 {

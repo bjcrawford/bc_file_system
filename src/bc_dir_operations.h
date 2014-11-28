@@ -21,11 +21,12 @@
 #include "bc_drive_operations.h"
 #include "bc_boot_operations.h"
 #include "bc_fat_operations.h"
+#include "bc_strlib/bc_strlib.h"
 
 size_t getRootDirectoryCluster(FILE**);
 size_t createDirFileEntry(FILE**, size_t, char, char*, char*);
 size_t createDirSubEntry(FILE**, size_t, char, char*);
-char *getDirectoryListing(FILE**, size_t);
+char *getDirectoryListing(FILE**, char*);
 size_t getDirectoryClusterAddress(FILE**, size_t, char*);
 
 size_t encodeTimeBytes();

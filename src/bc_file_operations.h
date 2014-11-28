@@ -18,6 +18,7 @@
 #include <string.h>
 #include "bc_file_struct.h"
 #include "bc_dir_operations.h"
+#include "bc_boot_operations.h"
 #include "bc_strlib/bc_strlib.h"
 
 BC_FILE *openFile(FILE**, char*);

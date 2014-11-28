@@ -17,10 +17,6 @@
 
  typedef struct
  {
- 	size_t startLoc;
- 	size_t currentLoc;
- 	size_t endLoc;
-
  	int used;
  	int write;
  	int hidden;
@@ -31,6 +27,14 @@
  	size_t modifyDate;
  	size_t firstClusterAddr;
  	size_t fileSize;
+
+ 	size_t startLoc;
+ 	size_t currentLoc;
+ 	size_t currentClusterAddr;
+ 	size_t endLoc;
+ 	size_t endClusterAddr;
+ 	size_t numOfClusters;
+
 
  } BC_FILE;
 

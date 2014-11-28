@@ -50,10 +50,8 @@ BC_FILE *openFile(FILE **virDrive, char *filePath)
 
 	entryAddr = createDirFileEntry(virDrive, clusterAddr, 0x1, fileName, fileExt);
 
-	fp->startLoc = 0;
-	fp->currentLoc = 0;
-	fp->endLoc = 0;
-
+	/* This function could be modified to take a "mode" and
+	   to set the following four attributes accordingly */
 	fp->used = 1;
 	fp->write = 1;
 	fp->hidden = 0;
@@ -66,6 +64,13 @@ BC_FILE *openFile(FILE **virDrive, char *filePath)
 	fp->firstClusterAddr = getDirEntryStartCluster(virDrive, clusterAddr, entryAddr);
 	fp->fileSize = getDirEntryFileSize(virDrive,clusterAddr, entryAddr);
 
+	fp->startLoc = fp->firstClusterAddr * getBytesPerCluster(virDrive);
+	fp->currentLoc = fp->firstClusterAddr * getBytesPerCluster(virDrive);
+	fp->currentClusterAddr = fp->firstClusterAddr;
+	fp->endLoc = fp->firstClusterAddr * getBytesPerCluster(virDrive);
+	fp->endClusterAddr = fp->firstClusterAddr;
+	fp->numOfClusters = 1;
+
 	return fp;
 }
 
@@ -77,6 +82,11 @@ void createDirectory(FILE **virDrive, char *dirName)
 size_t writeFile(FILE **virDrive, void *src, size_t size, size_t len, BC_FILE *dest)
 {
 	size_t written = 0;
+	size_t i;
+	for(i = 0; i < len; i++)
+	{
+		
+	}
 
 	return written;
 }

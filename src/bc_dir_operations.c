@@ -71,7 +71,7 @@ size_t getRootDirectoryCluster(FILE** virDrive)
  * @param  attr        The attributes of the file (one byte)
  *                       Bit 0: 0 for unused entry, 1 for used entry
  *                       Bit 1: 0 for R/O, 1 for R/W
- *                       Bit 2: 1 for hidden file/directory
+ *                       Bit 2: 1 for hidden file
  *                       Bit 3: 1 for system file
  *                       Bit 4: 1 for subdirectory
  *                       The remaining bits are unused
@@ -82,6 +82,10 @@ size_t getRootDirectoryCluster(FILE** virDrive)
 size_t createDirFileEntry(FILE **virDrive, size_t clusterAddr,
 	                     char attr, char *name, char *ext)
 {
+	size_t startCluster = getNextFreeCluster(virDrive);
+	setFATEntry(virDrive, startCluster, 0xffffffff);
+	findAndSetNextFreeCluster(virDrive);
+
 	size_t entryAddr = getFirstFreeDirEntryAddr(virDrive, clusterAddr);
 	size_t loc = getDirEntryLoc(virDrive, clusterAddr, entryAddr);
 	size_t currentTime = encodeTimeBytes();
@@ -101,8 +105,8 @@ size_t createDirFileEntry(FILE **virDrive, size_t clusterAddr,
 	/* Set modified date/time */
 	writeNum(virDrive, loc + 20, 4, currentTime);
 
-	/* Set first cluster of file (0: empty file) */
-	writeNum(virDrive, loc + 24, 4, 0);
+	/* Set first cluster of file */
+	writeNum(virDrive, loc + 24, 4, startCluster);
 
 	/* Set file size */
 	writeNum(virDrive, loc + 28, 4, 0);

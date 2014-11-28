@@ -23,8 +23,8 @@
 
 BC_FILE *openFile(FILE**, char*);
 void createDirectory(FILE**, char*);
-size_t writeFile(FILE**, void*, size_t, size_t, BC_FILE*);
-size_t readFile(FILE**, void*, size_t, size_t, BC_FILE*);
+void writeFile(FILE**, void*, size_t, BC_FILE*);
+void readFile(FILE**, void*, size_t, size_t, BC_FILE*);
 int closeFile(FILE**, BC_FILE*);
 int deleteFile(FILE**, BC_FILE*);
 

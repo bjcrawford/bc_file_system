@@ -194,7 +194,7 @@ void setInitialized(FILE **virDrive, size_t init)
 */
 void setDriveLabel(FILE **virDrive, char *driveLabel)
 {
-	writeStr(virDrive, 1, 20, driveLabel);
+	writeStr(virDrive, 1, strlen(driveLabel), driveLabel);
 }
 
 /*

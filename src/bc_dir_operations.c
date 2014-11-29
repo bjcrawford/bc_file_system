@@ -161,6 +161,98 @@ size_t createDirSubEntry(FILE **virDrive, size_t clusterAddr, char attr, char *n
 }
 
 /**
+ * Determines if a file exists in the given directory cluster.
+ *
+ * @param  virDrive    A pointer to the file pointer of the virtual drive
+ * @param  clusterAddr The directory cluster to search
+ * @param  fileName    The name of the file to locate
+ * @param  fileExt     The extension of the file to locate
+ * @return             1 if found, 0 otherwise
+ */
+size_t dirFileEntryExists(FILE **virDrive, size_t clusterAddr, char *fileName, char *fileExt)
+{
+	char *entryName;
+	char *entryExt;
+	size_t found = 0;
+	size_t end = 0;
+	size_t entryAddr = 0;
+	size_t currentCluster = clusterAddr;
+	size_t nextCluster = 0;
+
+	while(!found && !end)
+	{
+		entryName = getDirEntryFileName(virDrive, clusterAddr, entryAddr);
+		entryExt = getDirEntryFileExt(virDrive, clusterAddr, entryAddr);
+		if(strcmp(entryName, fileName) == 0 && strcmp(entryExt, fileExt) == 0)
+			found = 1;
+		else
+		{
+			entryAddr++;
+			if(entryAddr % 16 == 0)
+			{
+				nextCluster = getFATEntry(virDrive, currentCluster);
+				if(nextCluster == 0xffffffff)
+					end = 1;
+				currentCluster = nextCluster;
+			}
+		}
+	}
+
+	return found;
+}
+
+/**
+ * Returns the directory entry address of a file in the given directory cluster.
+ *
+ * @param  virDrive    A pointer to the file pointer of the virtual drive
+ * @param  clusterAddr The directory cluster to search
+ * @param  fileName    The name of the file to locate
+ * @param  fileExt     The extension of the file to locate
+ * @return             The file's directory entry address
+ */
+size_t getDirFileEntryAddr(FILE **virDrive, size_t clusterAddr, char *fileName, char *fileExt)
+{
+	char *entryName;
+	char *entryExt;
+	size_t found = 0;
+	size_t end = 0;
+	size_t entryAddr = 0;
+	size_t currentCluster = clusterAddr;
+	size_t nextCluster = 0;
+
+	while(!found)
+	{
+		entryName = getDirEntryFileName(virDrive, clusterAddr, entryAddr);
+		entryExt = getDirEntryFileExt(virDrive, clusterAddr, entryAddr);
+		if(strcmp(entryName, fileName) == 0 && strcmp(entryExt, fileExt) == 0)
+			found = 1;
+		else
+		{
+			entryAddr++;
+			if(entryAddr % 16 == 0)
+			{
+				nextCluster = getFATEntry(virDrive, currentCluster);
+				if(nextCluster == 0xffffffff)
+					end = 1;
+				currentCluster = nextCluster;
+			}
+		}
+		free(entryName);
+		free(entryExt);
+	}
+
+	if(end)
+	{
+		fprintf(stderr, "Could not locate file in getDirFileEntryAddr()\n");
+		fprintf(stderr, "Call dirFileEntryExists() beforehand to ensure file existence\n");
+		fprintf(stderr, "Exit\n");
+		exit(1);
+	}
+
+	return entryAddr;
+}
+
+/**
  * Returns a string containing a listing of the contents of a
  * directory. 
  *

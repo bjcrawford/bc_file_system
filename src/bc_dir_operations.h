@@ -26,6 +26,8 @@
 size_t getRootDirectoryCluster(FILE**);
 size_t createDirFileEntry(FILE**, size_t, char, char*, char*);
 size_t createDirSubEntry(FILE**, size_t, char, char*);
+size_t dirFileEntryExists(FILE**, size_t, char*, char*);
+size_t getDirFileEntryAddr(FILE**, size_t, char*, char*);
 char *getDirectoryListing(FILE**, char*);
 size_t getDirectoryClusterAddress(FILE**, size_t, char*);
 

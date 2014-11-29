@@ -334,8 +334,7 @@ char *getDirectoryListing(FILE **virDrive, char *dirPath)
 
 		/* Allocate space for the listing string */
 		listing = calloc(80 * (count + 2), sizeof(char));
-		strcpy(listing, "\n");
-		strcat(listing, "  File Name          |  File Size |  Date/Time Created  |  Date/Time Modified \n");
+		strcpy(listing, "  File Name          | File Size |  Date/Time Created  |  Date/Time Modified \n");
 		strcat(listing, "  ============================================================================\n");
 
 		/* Reset iteration variables */
@@ -365,7 +364,10 @@ char *getDirectoryListing(FILE **virDrive, char *dirPath)
 				sprintf(temp, "%-18s", fileName);
 				strcat(fileInfo, temp);
 
-				sprintf(temp, " | %10ld", getDirEntryFileSize(virDrive, clusterAddr, entryAddr));
+				if((attr & 0x10) ^ 0x10)
+					sprintf(temp, " | %9ld", getDirEntryFileSize(virDrive, clusterAddr, entryAddr));
+				else
+					sprintf(temp, " |     -    ");
 				strcat(fileInfo, temp);
 
 				struct tm *createTime = decodeTimeBytes(getDirEntryCreateTimeBytes(virDrive, clusterAddr, entryAddr));
@@ -378,7 +380,7 @@ char *getDirectoryListing(FILE **virDrive, char *dirPath)
 					    createTime->tm_min,
 					    createTime->tm_sec);
 
-				sprintf(temp, " | %-20s", timeStr);
+				sprintf(temp, " | %19s", timeStr);
 				strcat(fileInfo, temp);
 
 				struct tm *modTime = decodeTimeBytes(getDirEntryModifiedTimeBytes(virDrive, clusterAddr, entryAddr));
@@ -391,11 +393,11 @@ char *getDirectoryListing(FILE **virDrive, char *dirPath)
 					    modTime->tm_min,
 					    modTime->tm_sec);
 
-				sprintf(temp, " | %-20s", timeStr);
+				sprintf(temp, " | %19s", timeStr);
 				strcat(fileInfo, temp);
 
 				strcat(listing, fileInfo);
-				strcat(listing, "\n\n");
+				strcat(listing, "\n");
 			
 				entryAddr++;
 				if(entryAddr % 16 == 0)

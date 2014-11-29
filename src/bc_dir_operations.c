@@ -333,8 +333,10 @@ char *getDirectoryListing(FILE **virDrive, char *dirPath)
 		}
 
 		/* Allocate space for the listing string */
-		listing = calloc(17 * count, sizeof(char));
-		strcpy(listing, "");
+		listing = calloc(80 * (count + 2), sizeof(char));
+		strcpy(listing, "\n");
+		strcat(listing, "  File Name          |  File Size |  Date/Time Created  |  Date/Time Modified \n");
+		strcat(listing, "  ============================================================================\n");
 
 		/* Reset iteration variables */
 		end = 0;
@@ -349,13 +351,51 @@ char *getDirectoryListing(FILE **virDrive, char *dirPath)
 				end = 1;
 			else
 			{
-				strcat(listing, getDirEntryFileName(virDrive, clusterAddr, entryAddr));
+				char fileName[18];
+				char timeStr[20];
+				char fileInfo[80];
+				char temp[50];
+				strcpy(fileInfo, "  ");
+				strncpy(fileName, getDirEntryFileName(virDrive, clusterAddr, entryAddr), 12);
 				if((attr & 0x10) ^ 0x10)
 				{
-					strcat(listing, ".");
-					strcat(listing, getDirEntryFileExt(virDrive, clusterAddr, entryAddr));
+					strncat(fileName, ".", 1);
+					strncat(fileName, getDirEntryFileExt(virDrive, clusterAddr, entryAddr), 3);
 				}
-				strcat(listing, "\n");
+				sprintf(temp, "%-18s", fileName);
+				strcat(fileInfo, temp);
+
+				sprintf(temp, " | %10ld", getDirEntryFileSize(virDrive, clusterAddr, entryAddr));
+				strcat(fileInfo, temp);
+
+				struct tm *createTime = decodeTimeBytes(getDirEntryCreateTimeBytes(virDrive, clusterAddr, entryAddr));
+
+				sprintf(timeStr, "%04d-%02d-%02d %02d:%02d:%02d",
+					    createTime->tm_year,
+					    createTime->tm_mon,
+					    createTime->tm_mday,
+					    createTime->tm_hour,
+					    createTime->tm_min,
+					    createTime->tm_sec);
+
+				sprintf(temp, " | %-20s", timeStr);
+				strcat(fileInfo, temp);
+
+				struct tm *modTime = decodeTimeBytes(getDirEntryModifiedTimeBytes(virDrive, clusterAddr, entryAddr));
+
+				sprintf(timeStr, "%04d-%02d-%02d %02d:%02d:%02d",
+					    modTime->tm_year,
+					    modTime->tm_mon,
+					    modTime->tm_mday,
+					    modTime->tm_hour,
+					    modTime->tm_min,
+					    modTime->tm_sec);
+
+				sprintf(temp, " | %-20s", timeStr);
+				strcat(fileInfo, temp);
+
+				strcat(listing, fileInfo);
+				strcat(listing, "\n\n");
 			
 				entryAddr++;
 				if(entryAddr % 16 == 0)

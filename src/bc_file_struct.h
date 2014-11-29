@@ -17,10 +17,10 @@
 
 typedef struct
 {
-	int used;
-	int write;
-	int hidden;
-	int subDir;
+	size_t used;
+	size_t write;
+	size_t hidden;
+	size_t subDir;
 	char *fileName;
 	char *fileExt;
 	size_t createDate;
@@ -31,9 +31,12 @@ typedef struct
 	size_t startLoc;
 	size_t currentClusterAddr;
 	size_t currentLoc;
+	size_t dirClusterAddr;
+	size_t dirEntryAddr;
 
 } BC_FILE;
 
+BC_FILE *allocateBC_File();
 void bc_rewind(BC_FILE*);
 
 #endif

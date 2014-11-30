@@ -83,7 +83,7 @@ int main(int argc, char **argv)
 
 	fprintf(stdout, "Rewinding and reading 2066 characters from 'directory0/file1.txt':\n\n");
 	bc_rewind(file1);
-	char *strRead1[2067];
+	char strRead1[2067];
 	readFile(&vd, strRead1, 0, 2066, file1);
 	strRead1[2066] = '\0';
 	printf("%s\n\n", strRead1);
@@ -103,17 +103,18 @@ int main(int argc, char **argv)
 
 void printBootClusterInfo(FILE **virDrive)
 {
-	fprintf(stdout, "\n===================================================\n");
-	fprintf(stdout, "  Boot Cluster Info:\n");
-	fprintf(stdout, "    Initialized:                 %zu\n", getInitialized(virDrive));
-	fprintf(stdout, "    Drive Label:                 %s\n", getDriveLabel(virDrive));
-	fprintf(stdout, "    Bytes Per Cluster:           %zu\n", getBytesPerCluster(virDrive));
-	fprintf(stdout, "    Number Of Reserved Clusters: %zu\n", getNumberOfReservedClusters(virDrive));
-	fprintf(stdout, "    Number Of Clusters On Drive: %zu\n", getNumberOfClustersOnDrive(virDrive));
-	fprintf(stdout, "    Number Of Clusters Per FAT:  %zu\n", getNumberOfClustersPerFAT(virDrive));
-	fprintf(stdout, "    First Cluster Of Root Dir:   %zu\n", getFirstClusterOfRootDir(virDrive));
-	fprintf(stdout, "    Number Of Free Clusters:     %zu\n", getNumberOfFreeClusters(virDrive));
-	fprintf(stdout, "    Next Free Cluster:           %zu\n", getNextFreeCluster(virDrive));
-	fprintf(stdout, "    Size Of Drive:               %zu\n", getSizeOfDrive(virDrive));
-	fprintf(stdout, "===================================================\n\n");
+	fprintf(stdout, "\nBoot Cluster Info:\n\n");
+	fprintf(stdout, "    Parameter                   |        Value       \n");
+	fprintf(stdout, "  ===================================================\n");
+	fprintf(stdout, "    Initialized                 | %17zu\n", getInitialized(virDrive));
+	fprintf(stdout, "    Drive Label                 | %17s\n", getDriveLabel(virDrive));
+	fprintf(stdout, "    Bytes Per Cluster           | %17zu\n", getBytesPerCluster(virDrive));
+	fprintf(stdout, "    Number Of Reserved Clusters | %17zu\n", getNumberOfReservedClusters(virDrive));
+	fprintf(stdout, "    Number Of Clusters On Drive | %17zu\n", getNumberOfClustersOnDrive(virDrive));
+	fprintf(stdout, "    Number Of Clusters Per FAT  | %17zu\n", getNumberOfClustersPerFAT(virDrive));
+	fprintf(stdout, "    First Cluster Of Root Dir   | %17zu\n", getFirstClusterOfRootDir(virDrive));
+	fprintf(stdout, "    Number Of Free Clusters     | %17zu\n", getNumberOfFreeClusters(virDrive));
+	fprintf(stdout, "    Next Free Cluster           | %17zu\n", getNextFreeCluster(virDrive));
+	fprintf(stdout, "    Size Of Drive               | %17zu\n", getSizeOfDrive(virDrive));
+	fprintf(stdout, "  ===================================================\n\n");
 }

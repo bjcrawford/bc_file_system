@@ -333,9 +333,9 @@ char *getDirectoryListing(FILE **virDrive, char *dirPath)
 		}
 
 		/* Allocate space for the listing string */
-		listing = calloc(80 * (count + 2), sizeof(char));
-		strcpy(listing, "  File Name          | File Size |  Date/Time Created  |  Date/Time Modified \n");
-		strcat(listing, "  ============================================================================\n");
+		listing = calloc(80 * (count + 3), sizeof(char));
+		strcpy(listing, "    File Name          | File Size |  Date/Time Created  |  Date/Time Modified \n");
+		strcat(listing, "  ==============================================================================\n");
 
 		/* Reset iteration variables */
 		end = 0;
@@ -354,7 +354,7 @@ char *getDirectoryListing(FILE **virDrive, char *dirPath)
 				char timeStr[20];
 				char fileInfo[80];
 				char temp[50];
-				strcpy(fileInfo, "  ");
+				strcpy(fileInfo, "    ");
 				strncpy(fileName, getDirEntryFileName(virDrive, clusterAddr, entryAddr), 12);
 				if((attr & 0x10) ^ 0x10)
 				{
@@ -408,6 +408,7 @@ char *getDirectoryListing(FILE **virDrive, char *dirPath)
 				}
 			}
 		}
+		strcat(listing, "  ==============================================================================\n");
 	}
 
 	return listing;

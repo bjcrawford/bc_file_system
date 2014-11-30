@@ -10,23 +10,23 @@
  *  Description: 
  *     This file holds all of the operations which can be performed on 
  *     the boot cluster of the virtual drive. The boot cluster will have 
- *     a size of 512 bytes. The layout of the data contained in the 
- *     boot cluster is as follows:
+ *     a size of one cluster (512 bytes). The layout of the data contained 
+ *     in the boot cluster is as follows:
  *     
  *        (bytes) | value 
  *       ---------------------------------------------------------------
- *        (0)     | A byte designating the virtual drive as initialized
- *        (1-20)  | A label for the virtual drive
- *        (21-22) | The number of bytes per cluster
- *        (23-24) | The number of reserved clusters
- *        (25-28) | The number of clusters on the virtual drive
- *        (29-32) | The number of clusters per file allocation table
- *        (33-36) | The first cluster of the root directory
- *        (37-40) | The number of free clusters
- *        (41-44) | The next free cluster
- *        (45-48) | The size of the virtual drive in bytes
+ *        (0)      | A byte designating the virtual drive as initialized
+ *        (1-20)   | A label for the virtual drive
+ *        (21-22)  | The number of bytes per cluster
+ *        (23-24)  | The number of reserved clusters
+ *        (25-28)  | The number of clusters on the virtual drive
+ *        (29-32)  | The number of clusters per file allocation table
+ *        (33-36)  | The first cluster of the root directory
+ *        (37-40)  | The number of free clusters
+ *        (41-44)  | The next free cluster
+ *        (45-48)  | The size of the virtual drive in bytes
+ *        (49-511) | This space is unused
  *
- * 
  *  This program was written for use in Linux.
 */
 
@@ -42,24 +42,31 @@
 */
 void initBootCluster(FILE **virDrive, char *driveLabel)
 {
-	rewind(*virDrive);
 	/* Rewind can throw an error under certain conditions */
+	rewind(*virDrive);
 
-	size_t driveSize = 0;
+	/* Size of each cluster in bytes */
+	size_t cSize = CLUSTER_SIZE;
+
+	/* Size of each FAT entry in bytes */
+	size_t fatEntrySize = FAT_ENTRY_BYTES;
+
+	/* Size of the drive in bytes */
+	size_t dSize = 0;
 	while(fgetc(*virDrive) != EOF)
-		driveSize++;
+		dSize++;
 
 	rewind(*virDrive);
-	setDriveLabel(virDrive, driveLabel);
-	setBytesPerCluster(virDrive, 512);
-	setNumberOfReservedClusters(virDrive, 1);
-	setNumberOfClustersOnDrive(virDrive, driveSize / 512);
-	setNumberOfClustersPerFAT(virDrive, ceil(((( (double) driveSize / 512) * 4) / 512)));
-	setFirstClusterOfRootDir(virDrive, ceil(((( (double) driveSize / 512) * 4) / 512)) + 1);
-	setNumberOfFreeClusters(virDrive, (driveSize / 512) - (ceil(((( (double) driveSize / 512) * 4) / 512)) + 2));
-	setNextFreeCluster(virDrive, ceil(((( (double) driveSize / 512) * 4) / 512)) + 2);
-	setSizeOfDrive(virDrive, driveSize);
 	setInitialized(virDrive, 1);
+	setDriveLabel(virDrive, driveLabel);
+	setBytesPerCluster(virDrive, cSize);
+	setNumberOfReservedClusters(virDrive, 1);
+	setNumberOfClustersOnDrive(virDrive, dSize / cSize);
+	setNumberOfClustersPerFAT(virDrive, ceil((double) (getNumberOfClustersOnDrive(virDrive) * fatEntrySize) / cSize));
+	setFirstClusterOfRootDir(virDrive, getNumberOfClustersPerFAT(virDrive) + 1);
+	setNumberOfFreeClusters(virDrive, getNumberOfClustersOnDrive(virDrive) - (getNumberOfClustersPerFAT(virDrive) + 2));
+	setNextFreeCluster(virDrive, getNumberOfClustersPerFAT(virDrive) + 2);
+	setSizeOfDrive(virDrive, dSize);
 
 	rewind(*virDrive);
 }

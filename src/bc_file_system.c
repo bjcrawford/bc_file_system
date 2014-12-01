@@ -12,8 +12,16 @@
 
 #include "bc_file_system.h"
 
+void initFileSystem(char *virDriveName, char *virDriveLabel)
+{
+	virDrive = openVirDrive(virDriveName);
 
+	/* Check if the drive has previously been initialized */
 
+	formatVirDrive();
 
-
-
+	bootRecord = initBootRecord(virDriveLabel);
+	writeBootRecord();
+	fileAllocTable = initFATClusters();
+	writeFAT();
+}

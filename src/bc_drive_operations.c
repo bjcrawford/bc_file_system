@@ -34,108 +34,88 @@
 #include "bc_drive_operations.h"
 
 /**
- * Opens a virtual drive (file) using the given name
+ * Opens the virtual drive using the given file name
  *
- * @param[out] virDrive     A pointer to the file pointer to assign the virtual drive
- * @param[in]  virDriveName A string containing the name of the virtual drive (file)
- *                          to open
+ * @param  virDriveName A string containing the name of the virtual drive (file)
+ *                      to open
+ * @return              A pointer to the file pointer of the virtual drive
 */
- int openVirDrive(FILE **virDrive, char *virDriveName)
+FILE *openVirDrive(char *virDriveName)
 {
-	*virDrive = fopen(virDriveName, "r+");
+	return fopen(virDriveName, "r+");
+}
 
-	return !(*virDrive == NULL);
+/** 
+ * Formats the virtual drive. 
+ *
+*/
+void formatVirDrive()
+{
+	rewind(virDrive);
+	int i;
+	u_int driveSize = 0;
+	while(fgetc(virDrive) != EOF)
+		driveSize++;
+	rewind(virDrive);
+	for(i = 0; i < driveSize; i++)
+		fputc(0x00, virDrive);
+	rewind(virDrive);
 }
 
 /**
- * Closes a virtual drive (file)
+ * Closes the virtual drive
  *
- * @param[in] virDrive A pointer to the file pointer of the virtual drive
+ * @param virDrive A pointer to the file pointer of the virtual drive
 */
-int closeVirDrive(FILE **virDrive)
+void closeVirDrive()
 {
-	return fclose(*virDrive);
-}
-
-/** 
- * Initializes a virtual drive (file). Formats the virtual drive and initializes 
- * the boot cluster.
- *
- * @param[in] virDrive   A pointer to the file pointer of the virtual drive
- * @param[in] driveLabel A string containing the drive label
-*/
-void initVirDrive(FILE **virDrive, char *driveLabel)
-{
-	formatVirDrive(virDrive);
-	initBootCluster(virDrive, driveLabel);
-	initFATClusters(virDrive);
-}
-
-/** 
- * Formats a virtual drive (file). 
- *
- * @param[in] virDrive A pointer to the file pointer of the virtual drive
-*/
-void formatVirDrive(FILE **virDrive)
-{
-	rewind(*virDrive);
-	int i;
-	size_t driveSize = 0;
-	while(fgetc(*virDrive) != EOF)
-		driveSize++;
-	rewind(*virDrive);
-	for(i = 0; i < driveSize; i++)
-		fputc(0x00, *virDrive);
-	rewind(*virDrive);
+	fclose(virDrive);
 }
 
 /**
  * Writes a non-negative value to the virtual drive (file)
  *
- * @param[in] virDrive A pointer to the file pointer of the virtual drive
- * @param[in] loc      The offset in bytes at which to write the value
- * @param[in] len      The maximum length in bytes of the write
- * @param[in] num      The value to be written
+ * @param loc      The offset in bytes at which to write the value
+ * @param len      The maximum length in bytes of the write
+ * @param num      The value to be written
 */
-void writeNum(FILE **virDrive, size_t loc, size_t len, size_t num)
+void writeNum(u_int loc, u_int len, u_int num)
 {
-	size_t i;
+	u_int i;
 	char *p = (char*) &num;
-	fseek(*virDrive, loc, SEEK_SET);
+	fseek(virDrive, loc, SEEK_SET);
 	for(i = 0; i < len; i++)
-		fputc(*p++, *virDrive);
+		fputc(*p++, virDrive);
 }
 
 /**
  * Writes a string to the virtual drive (file) 
  *
- * @param[in] virDrive A pointer to the file pointer of the virtual drive
- * @param[in] loc      The offset in bytes at which to write the string
- * @param[in] len      The maximum length in bytes of the write
- * @param[in] str      The string to be written
+ * @param loc      The offset in bytes at which to write the string
+ * @param len      The maximum length in bytes of the write
+ * @param str      The string to be written
  */
-void writeStr(FILE **virDrive, size_t loc, size_t len, char *str)
+void writeStr(u_int loc, u_int len, char *str)
 {
-	fseek(*virDrive, loc, SEEK_SET);
-	fwrite(str, sizeof(char), len, *virDrive);
+	fseek(virDrive, loc, SEEK_SET);
+	fwrite(str, sizeof(char), len, virDrive);
 }
 
 /**
  * Reads a value from the virtual drive (file)
  *
- * @param[in] virDrive A pointer to the file pointer of the virtual drive
- * @param[in] loc      The offset in bytes at which to read the value
- * @param[in] len      The maximum length in bytes of the read
+ * @param loc      The offset in bytes at which to read the value
+ * @param len      The maximum length in bytes of the read
  * @return             The value read
 */
-size_t readNum(FILE **virDrive, size_t loc, size_t len)
+u_int readNum(u_int loc, u_int len)
 {
-	size_t i;
-	size_t result = 0;
+	u_int i;
+	u_int result = 0;
 	char *p = (char*) &result;
-	fseek(*virDrive, loc, SEEK_SET);
-	for(i = 0; i < len && i < sizeof(size_t); i++)
-		*p++ = fgetc(*virDrive);
+	fseek(virDrive, loc, SEEK_SET);
+	for(i = 0; i < len && i < sizeof(u_int); i++)
+		*p++ = fgetc(virDrive);
 
 	return result;
 }
@@ -143,16 +123,15 @@ size_t readNum(FILE **virDrive, size_t loc, size_t len)
 /**
  * Reads a string from the virtual drive (file) 
  *
- * @param[in] virDrive A pointer to the file pointer of the virtual drive
- * @param[in] loc      The offset in bytes at which to read the string
- * @param[in] len      The maximum length in bytes of the read
- * @param[in] str      The string read
+ * @param loc      The offset in bytes at which to read the string
+ * @param len      The maximum length in bytes of the read
+ * @param str      The string read
  */
-char *readStr(FILE **virDrive, size_t loc, size_t len)
+char *readStr(u_int loc, u_int len)
 {
 	char *result = (char*) calloc(len + 1, sizeof(char));
-	fseek(*virDrive, loc, SEEK_SET);
-	fread(result, sizeof(char), len, *virDrive);
+	fseek(virDrive, loc, SEEK_SET);
+	fread(result, sizeof(char), len, virDrive);
 	
 	return result;
 }

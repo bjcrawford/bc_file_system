@@ -21,11 +21,11 @@
 #include "bc_boot_operations.h"
 #include "bc_strlib/bc_strlib.h"
 
-BC_FILE *openFile(FILE**, char*);
-void createDirectory(FILE**, char*);
-void writeFile(FILE**, void*, size_t, BC_FILE*);
-void readFile(FILE**, void*, size_t, size_t, BC_FILE*);
-int closeFile(FILE**, BC_FILE*);
-int deleteFile(FILE**, BC_FILE*);
+BC_FILE *openFile(char *filePath);
+void createDirectory(char *dirPath);
+void writeFile(void *src, u_int len, BC_FILE *dest);
+void readFile(void *dest, u_int size, u_int len, BC_FILE *src);
+int closeFile(BC_FILE *file);
+int deleteFile(BC_FILE *file);
 
 #endif

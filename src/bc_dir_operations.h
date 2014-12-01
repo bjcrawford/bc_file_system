@@ -18,41 +18,42 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include "bc_file_system.h"
+#include "bc_dir_entry_struct.h"
 #include "bc_drive_operations.h"
 #include "bc_boot_operations.h"
 #include "bc_fat_operations.h"
 #include "bc_strlib/bc_strlib.h"
 
-size_t getRootDirectoryCluster(FILE**);
-size_t createDirFileEntry(FILE**, size_t, char, char*, char*);
-size_t createDirSubEntry(FILE**, size_t, char, char*);
-size_t dirFileEntryExists(FILE**, size_t, char*, char*);
-size_t getDirFileEntryAddr(FILE**, size_t, char*, char*);
-char *getDirectoryListing(FILE**, char*);
-size_t getDirectoryClusterAddress(FILE**, size_t, char*);
+u_int createDirFileEntry(u_int clusterAddr, char attr, char *name, char *ext);
+u_int createDirSubEntry(u_int clusterAddr, char attr, char *name);
+u_int dirFileEntryExists(u_int clusterAddr, char *fileName, char *fileExt);
+u_int getDirFileEntryAddr(u_int clusterAddr, char *fileName, char *fileExt);
+char *getDirectoryListing(char *dirPath);
+u_int getDirectoryClusterAddress(u_int currentClusterAddr, char *dirName);
 
-size_t encodeTimeBytes();
-struct tm *decodeTimeBytes(size_t);
+u_int encodeTimeBytes();
+struct tm *decodeTimeBytes(u_int);
 
-size_t getDataStartLoc(FILE**);
-size_t getDirEntryLoc(FILE**, size_t, size_t);
-size_t getFirstFreeDirEntryAddr(FILE**, size_t);
+u_int getDataStartLoc();
+u_int getDirEntryLoc(u_int dirCluster, u_int entryAddr);
+u_int getFirstFreeDirEntryAddr(u_int dirCluster);
 
-char getDirEntryAttr(FILE**, size_t, size_t);
-char *getDirEntryFileName(FILE**, size_t, size_t);
-char *getDirEntryFileExt(FILE**, size_t, size_t);
-size_t getDirEntryCreateTimeBytes(FILE**, size_t, size_t);
-size_t getDirEntryModifiedTimeBytes(FILE**, size_t, size_t);
-size_t getDirEntryStartCluster(FILE**, size_t, size_t);
-size_t getDirEntryFileSize(FILE**, size_t, size_t);
+char getDirEntryAttr(u_int dirCluster, u_int entryAddr);
+char *getDirEntryFileName(u_int dirCluster, u_int entryAddr);
+char *getDirEntryFileExt(u_int dirCluster, u_int entryAddr);
+u_int getDirEntryCreateTimeBytes(u_int dirCluster, u_int entryAddr);
+u_int getDirEntryModifiedTimeBytes(u_int dirCluster, u_int entryAddr);
+u_int getDirEntryStartCluster(u_int dirCluster, u_int entryAddr);
+u_int getDirEntryFileSize(u_int dirCluster, u_int entryAddr);
 
-void setDirEntryAttr(FILE**, size_t, size_t, char);
-void setDirEntryFileName(FILE**, size_t, size_t, char*);
-void setDirEntryFileExt(FILE**, size_t, size_t, char*);
-void setDirEntryModifiedTimeBytes(FILE**, size_t, size_t, size_t);
-void setDirEntryStartCluster(FILE**, size_t, size_t, size_t);
-void setDirEntryFileSize(FILE**, size_t, size_t, size_t);
+void setDirEntryAttr(u_int dirCluster, u_int entryAddr, char attr);
+void setDirEntryFileName(u_int dirCluster, u_int entryAddr, char *name);
+void setDirEntryFileExt(u_int dirCluster, u_int entryAddr, char *ext);
+void setDirEntryModifiedTimeBytes(u_int dirCluster, u_int entryAddr, u_int timeBytes);
+void setDirEntryStartCluster(u_int dirCluster, u_int entryAddr, u_int clusterAddr);
+void setDirEntryFileSize(u_int dirCluster, u_int entryAddr, u_int fileSize);
 
-size_t adjustDirEntryFileSize(FILE**, size_t, size_t, size_t, size_t);
+u_int adjustDirEntryFileSize(u_int dirCluster, u_int entryAddr, u_int adjFileSize, u_int increase);
 
 #endif

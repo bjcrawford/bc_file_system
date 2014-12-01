@@ -24,7 +24,7 @@
  * @param  filePath A string containing the absolute file path
  * @return          A custom file pointer to the file
  */
-BC_FILE *openFile(FILE **virDrive, char *filePath)
+BC_FILE *openFile(char *filePath)
 {
 	/* Allocate memory for the custom file pointer */
 	BC_FILE *fp = malloc(sizeof(*fp));
@@ -35,15 +35,14 @@ BC_FILE *openFile(FILE **virDrive, char *filePath)
 		exit(1);
 	}
 	
-	/* Allocate memory for strings to parse filePath */
-	char *file = (char*) calloc(17, sizeof(char));
-	char *fileName = (char*) calloc(13, sizeof(char));
-	char *fileExt = (char*) calloc(4, sizeof(char));
+	char file[17];
+	char fileName[13];
+	char fileExt[4];
 
 	/* Declare variables for cluster and directory navigation */
-	size_t clusterAddr = getRootDirectoryCluster(virDrive);
-	size_t nextClusterAddr;
-	size_t entryAddr;
+	u_int clusterAddr = bootRecord->rootDirStart;
+	u_int nextClusterAddr;
+	u_int entryAddr;
 
 	/* If the file to open is not in the root directory,
 	   parse filePath to locate the file's parent directory */
@@ -59,11 +58,11 @@ BC_FILE *openFile(FILE **virDrive, char *filePath)
 		int i = 0;
 		while(p[i] != NULL && p[i+1] != NULL)
 		{
-			nextClusterAddr = getDirectoryClusterAddress(virDrive, clusterAddr, p[i]);
+			nextClusterAddr = getDirectoryClusterAddress(clusterAddr, p[i]);
 			if(nextClusterAddr == 0) /* If directory is not found, create */
 			{
-				size_t nextClusterEntryAddr = createDirSubEntry(virDrive, clusterAddr, 0x13, p[i]);
-				nextClusterAddr = getDirEntryStartCluster(virDrive, clusterAddr, nextClusterEntryAddr);
+				u_int nextClusterEntryAddr = createDirSubEntry(clusterAddr, 0x13, p[i]);
+				nextClusterAddr = getDirEntryStartCluster(clusterAddr, nextClusterEntryAddr);
 			}
 			clusterAddr = nextClusterAddr;
 			free(p[i]);
@@ -82,39 +81,35 @@ BC_FILE *openFile(FILE **virDrive, char *filePath)
 
 	/* Determine if file exists */
 	/* If so, get entry address from current directory cluster */
-	if(dirFileEntryExists(virDrive, clusterAddr, fileName, fileExt))
-		entryAddr = getDirFileEntryAddr(virDrive, clusterAddr, fileName, fileExt);
+	if(dirFileEntryExists(clusterAddr, fileName, fileExt))
+		entryAddr = getDirFileEntryAddr(clusterAddr, fileName, fileExt);
 	/* If not, create file and record entry address */
 	else 	
-		entryAddr = createDirFileEntry(virDrive, clusterAddr, 0x3, fileName, fileExt);
+		entryAddr = createDirFileEntry(clusterAddr, 0x3, fileName, fileExt);
 
 	/* NOTE: This function could be modified to take a "mode" and to set the 
 	         file's attributes accordingly */
 	
 	/* Set the properties of the file pointer using the metadata located 
 	   in the file's directory entry */
-	char attr = getDirEntryAttr(virDrive, clusterAddr, entryAddr);
+	char attr = getDirEntryAttr(clusterAddr, entryAddr);
 	fp->used = attr & 0x1;
 	fp->write = attr & 0x2;
 	fp->hidden = attr & 0x4;
 	fp->subDir = attr & 0x8;
-	fp->fileName = getDirEntryFileName(virDrive, clusterAddr, entryAddr);
-	fp->fileExt = getDirEntryFileExt(virDrive, clusterAddr, entryAddr);
-	fp->createDate = getDirEntryCreateTimeBytes(virDrive, clusterAddr, entryAddr);
-	fp->modifyDate = getDirEntryModifiedTimeBytes(virDrive, clusterAddr, entryAddr);
+	fp->fileName = getDirEntryFileName(clusterAddr, entryAddr);
+	fp->fileExt = getDirEntryFileExt(clusterAddr, entryAddr);
+	fp->createDate = getDirEntryCreateTimeBytes(clusterAddr, entryAddr);
+	fp->modifyDate = getDirEntryModifiedTimeBytes(clusterAddr, entryAddr);
 	fp->filePosition = 0;
-	fp->fileSize = getDirEntryFileSize(virDrive,clusterAddr, entryAddr);
-	fp->startClusterAddr = getDirEntryStartCluster(virDrive, clusterAddr, entryAddr);
-	fp->startLoc = fp->startClusterAddr * getBytesPerCluster(virDrive);
+	fp->fileSize = getDirEntryFileSize(clusterAddr, entryAddr);
+	fp->startClusterAddr = getDirEntryStartCluster(clusterAddr, entryAddr);
+	fp->startLoc = fp->startClusterAddr * bootRecord->bytesPerCluster;
 	fp->currentClusterAddr = fp->startClusterAddr;
-	fp->currentLoc = fp->startClusterAddr * getBytesPerCluster(virDrive);
+	fp->currentLoc = fp->startClusterAddr * bootRecord->bytesPerCluster;
 
 	fp->dirClusterAddr = clusterAddr;
 	fp->dirEntryAddr = entryAddr;
-
-	free(file);
-	free(fileName);
-	free(fileExt);
 
 	return fp;
 }
@@ -126,14 +121,14 @@ BC_FILE *openFile(FILE **virDrive, char *filePath)
  * @param virDrive A pointer to the file pointer of the virtual drive
  * @param dirPath  A string containing the absolute folder path
  */
-void createDirectory(FILE **virDrive, char *dirPath)
+void createDirectory(char *dirPath)
 {
 	/* Allocate memory for a string to parse the directory path */
 	char *dir = (char*) calloc(13, sizeof(char));
 
 	/* Declare variables for cluster navigation */
-	size_t clusterAddr = getRootDirectoryCluster(virDrive);
-	size_t nextClusterAddr;
+	u_int clusterAddr = bootRecord->rootDirStart;
+	u_int nextClusterAddr;
 
 	/* If the directory to create is not in the root directory,
 	   parse dirPath to locate the directory's parent directory */
@@ -149,11 +144,11 @@ void createDirectory(FILE **virDrive, char *dirPath)
 		int i = 0;
 		while(p[i] != NULL && p[i+1] != NULL)
 		{
-			nextClusterAddr = getDirectoryClusterAddress(virDrive, clusterAddr, p[i]);
+			nextClusterAddr = getDirectoryClusterAddress(clusterAddr, p[i]);
 			if(nextClusterAddr == 0) /* If directory is not found, create it */
 			{
-				size_t nextClusterEntryAddr = createDirSubEntry(virDrive, clusterAddr, 0x13, p[i]);
-				nextClusterAddr = getDirEntryStartCluster(virDrive, clusterAddr, nextClusterEntryAddr);
+				u_int nextClusterEntryAddr = createDirSubEntry(clusterAddr, 0x13, p[i]);
+				nextClusterAddr = getDirEntryStartCluster(clusterAddr, nextClusterEntryAddr);
 			}
 			clusterAddr = nextClusterAddr;
 			i++;
@@ -166,21 +161,21 @@ void createDirectory(FILE **virDrive, char *dirPath)
 
 	/* NOTE: This function could be modified to take a "mode" and to set the 
 	         directory's attributes accordingly */
-	createDirSubEntry(virDrive, clusterAddr, 0x13, dir);
+	createDirSubEntry(clusterAddr, 0x13, dir);
 }
 
-void writeFile(FILE **virDrive, void *src, size_t len, BC_FILE *dest)
+void writeFile(void *src, u_int len, BC_FILE *dest)
 {
-	size_t lenLeft = len;
-	size_t bytesLeft;
+	u_int lenLeft = len;
+	u_int bytesLeft;
 	
 	while(lenLeft > 0)
 	{
-		bytesLeft = ((dest->currentClusterAddr + 1) * getBytesPerCluster(virDrive)) - dest->currentLoc; 
+		bytesLeft = ((dest->currentClusterAddr + 1) * bootRecord->bytesPerCluster) - dest->currentLoc; 
 
 		if(lenLeft < bytesLeft) /* write to current cluster only */
 		{
-			writeStr(virDrive, dest->currentLoc, lenLeft, src);
+			writeStr(dest->currentLoc, lenLeft, src);
 			dest->currentLoc += lenLeft;
 			lenLeft -= lenLeft;
 		}
@@ -188,43 +183,43 @@ void writeFile(FILE **virDrive, void *src, size_t len, BC_FILE *dest)
 		{
 			void *srcChunk = calloc(bytesLeft, sizeof(char));
 			memcpy(srcChunk, src, bytesLeft);
-			writeStr(virDrive, dest->currentLoc, bytesLeft, srcChunk);
+			writeStr(dest->currentLoc, bytesLeft, srcChunk);
 			free(srcChunk);
-			size_t nextClusterAddr = getFATEntry(virDrive, dest->currentClusterAddr);
+			u_int nextClusterAddr = fileAllocTable[dest->currentClusterAddr];
 			if(nextClusterAddr != 0xffffffff)
 			{
 				dest->currentClusterAddr = nextClusterAddr;
-				dest->currentLoc = dest->currentClusterAddr * getBytesPerCluster(virDrive);
+				dest->currentLoc = dest->currentClusterAddr * bootRecord->bytesPerCluster;
 			}
 			else
 			{
-				dest->currentClusterAddr = addClusterToChain(virDrive, dest->currentClusterAddr);
-				dest->currentLoc = dest->currentClusterAddr * getBytesPerCluster(virDrive);
+				dest->currentClusterAddr = addClusterToChain(dest->currentClusterAddr);
+				dest->currentLoc = dest->currentClusterAddr * bootRecord->bytesPerCluster;
 			}
 			lenLeft -= bytesLeft;
 			src += bytesLeft;
 		}
 	}
 	dest->modifyDate = encodeTimeBytes();
-	setDirEntryModifiedTimeBytes(virDrive, dest->dirClusterAddr, dest->dirEntryAddr, dest->modifyDate);
+	setDirEntryModifiedTimeBytes(dest->dirClusterAddr, dest->dirEntryAddr, dest->modifyDate);
 	dest->filePosition += len;
 	dest->fileSize += len;
-	setDirEntryFileSize(virDrive, dest->dirClusterAddr, dest->dirEntryAddr, dest->fileSize);
+	setDirEntryFileSize(dest->dirClusterAddr, dest->dirEntryAddr, dest->fileSize);
 }
 
-void readFile(FILE **virDrive, void *dest, size_t size, size_t len, BC_FILE *src)
+void readFile(void *dest, u_int size, u_int len, BC_FILE *src)
 {
 	if(len > (src->fileSize - src->filePosition))
 		len = (src->fileSize - src->filePosition);
 
-	size_t lenLeft = len;
-	size_t bytesLeft;
+	u_int lenLeft = len;
+	u_int bytesLeft;
 	
 	while(lenLeft > 0)
 	{
-		bytesLeft = ((src->currentClusterAddr + 1) * getBytesPerCluster(virDrive)) - src->currentLoc; 
+		bytesLeft = ((src->currentClusterAddr + 1) * bootRecord->bytesPerCluster) - src->currentLoc; 
 
-		char *srcChunk = readStr(virDrive, src->currentLoc, lenLeft);
+		char *srcChunk = readStr(src->currentLoc, lenLeft);
 		memcpy(dest, srcChunk, lenLeft);
 		free(srcChunk);
 
@@ -235,16 +230,16 @@ void readFile(FILE **virDrive, void *dest, size_t size, size_t len, BC_FILE *src
 		}
 		else /* read may span multiple clusters */
 		{
-			size_t nextClusterAddr = getFATEntry(virDrive, src->currentClusterAddr);
+			u_int nextClusterAddr = fileAllocTable[src->currentClusterAddr];
 			if(nextClusterAddr != 0xffffffff) 
 			{
 				src->currentClusterAddr = nextClusterAddr;
-				src->currentLoc = src->currentClusterAddr * getBytesPerCluster(virDrive);
+				src->currentLoc = src->currentClusterAddr * bootRecord->bytesPerCluster;
 			}
 			else
 			{
-				src->currentClusterAddr = addClusterToChain(virDrive, src->currentClusterAddr);
-				src->currentLoc = src->currentClusterAddr * getBytesPerCluster(virDrive);
+				src->currentClusterAddr = addClusterToChain(src->currentClusterAddr);
+				src->currentLoc = src->currentClusterAddr * bootRecord->bytesPerCluster;
 			}
 			lenLeft -= bytesLeft;
 			dest += bytesLeft;
@@ -253,13 +248,13 @@ void readFile(FILE **virDrive, void *dest, size_t size, size_t len, BC_FILE *src
 	src->filePosition += len;
 }
 
-int closeFile(FILE **virDrive, BC_FILE *file)
+int closeFile(BC_FILE *file)
 {
 
 	return 0;
 }
 
-int deleteFile(FILE **virDrive, BC_FILE *file)
+int deleteFile(BC_FILE *file)
 {
 	
 	return 0;

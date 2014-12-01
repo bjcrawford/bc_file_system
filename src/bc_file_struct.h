@@ -17,22 +17,22 @@
 
 typedef struct
 {
-	size_t used;
-	size_t write;
-	size_t hidden;
-	size_t subDir;
+	u_int used;
+	u_int write;
+	u_int hidden;
+	u_int subDir;
 	char *fileName;
 	char *fileExt;
-	size_t createDate;
-	size_t modifyDate;
-	size_t filePosition;
-	size_t fileSize;
-	size_t startClusterAddr;
-	size_t startLoc;
-	size_t currentClusterAddr;
-	size_t currentLoc;
-	size_t dirClusterAddr;
-	size_t dirEntryAddr;
+	u_int createDate;
+	u_int modifyDate;
+	u_int filePosition;
+	u_int fileSize;
+	u_int startClusterAddr;
+	u_int startLoc;
+	u_int currentClusterAddr;
+	u_int currentLoc;
+	u_int dirClusterAddr;
+	u_int dirEntryAddr;
 
 } BC_FILE;
 

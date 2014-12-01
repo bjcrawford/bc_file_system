@@ -17,31 +17,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "bc_boot_record_struct.h"
 #include "bc_drive_operations.h"
 #include "bc_file_system.h"
 
-void initBootCluster(FILE**, char*);
+BootRecord *initBootRecord(char *driveLabel);
 
-size_t getInitialized(FILE**);
-char *getDriveLabel(FILE**);
-size_t getBytesPerCluster(FILE**);
-size_t getNumberOfReservedClusters(FILE**);
-size_t getNumberOfClustersOnDrive(FILE**);
-size_t getNumberOfClustersPerFAT(FILE**);
-size_t getFirstClusterOfRootDir(FILE**);
-size_t getNumberOfFreeClusters(FILE**);
-size_t getNextFreeCluster(FILE**);
-size_t getSizeOfDrive(FILE**);
+void writeBootRecord();
 
-void setInitialized(FILE**, size_t);
-void setDriveLabel(FILE**, char*);
-void setBytesPerCluster(FILE**, size_t);
-void setNumberOfReservedClusters(FILE**, size_t);
-void setNumberOfClustersOnDrive(FILE**, size_t);
-void setNumberOfClustersPerFAT(FILE**, size_t);
-void setFirstClusterOfRootDir(FILE**, size_t);
-void setNumberOfFreeClusters(FILE**, size_t);
-void setNextFreeCluster(FILE**, size_t);
-void setSizeOfDrive(FILE**, size_t);
+void readBootRecord();
 
 #endif

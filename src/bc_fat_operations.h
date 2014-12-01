@@ -15,17 +15,16 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "bc_file_system.h"
 #include "bc_drive_operations.h"
 #include "bc_boot_operations.h"
 
-void initFATClusters(FILE**);
+u_int *initFATClusters();
 
-size_t getFATEntry(FILE**, size_t);
-size_t getFATStartLocation(FILE**);
+void writeFAT();
+void readFAT();
 
-void setFATEntry(FILE**, size_t, size_t);
-
-size_t addClusterToChain(FILE**, size_t);
-void findAndSetNextFreeCluster(FILE**);
+u_int addClusterToChain(u_int clusterAddr);
+void findAndSetNextFreeCluster();
 
 #endif

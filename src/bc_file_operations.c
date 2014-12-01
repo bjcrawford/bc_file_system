@@ -27,7 +27,7 @@
 BC_FILE *openFile(FILE **virDrive, char *filePath)
 {
 	/* Allocate memory for the custom file pointer */
-	BC_FILE *fp = allocateBC_File();
+	BC_FILE *fp = malloc(sizeof(*fp));
 	if(!fp)
 	{
 		fprintf(stderr, "Error allocating space for BC_FILE\n");

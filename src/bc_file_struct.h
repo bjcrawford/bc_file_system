@@ -36,7 +36,7 @@ typedef struct
 
 } BC_FILE;
 
-BC_FILE *allocateBC_File();
 void bc_rewind(BC_FILE*);
+void freeBC_File(BC_FILE*);
 
 #endif

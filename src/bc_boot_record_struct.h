@@ -18,12 +18,12 @@
 #ifndef BC_BOOT_RECORD_STRUCT
 #define BC_BOOT_RECORD_STRUCT
 
-typedef unsigned int u_int;
+#include "bc_header.h"
 
 typedef struct 
 {
 	char init;
-	char label[20];
+	char label[DRIVE_LABEL_MAX + 1];
 	u_int bytesPerCluster;
 	u_int reservedClusters;
 	u_int clustersOnDrive;

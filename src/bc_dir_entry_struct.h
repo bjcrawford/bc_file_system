@@ -7,19 +7,24 @@
  *  Prof: Kwatny
  *  TAs: Liang and Casey
  *  Date: 2014-12-05
- *  Description: This program was written for use in Linux.
+ *  Description: 
+ *     This file contains the struct which represents the properties
+ *     contained within a directory entry. For a more detailed explanation
+ *     of the properties see the documentation in bc_dir_operations.c
+ *     
+ *     This program was written for use in Linux.
 */
 
 #ifndef BC_DIR_ENTRY_STRUCT
 #define BC_DIR_ENTRY_STRUCT
 
-typedef unsigned int u_int;
+#include "bc_header.h"
 
 typedef struct 
 {
 	char attr;
-	char fileName[12];
-	char fileExt[3];
+	char fileName[FILE_NAME_MAX + 1];
+	char fileExt[FILE_EXT_SIZE + 1];
 	u_int createDate;
 	u_int modifiedDate;
 	u_int startCluster;

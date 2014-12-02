@@ -10,7 +10,7 @@
  *  Description: 
  *     The file holds all of the operations which can be performed on
  *     the directory clusters of the virtual drive. Each directory 
- *     entry will consist of 32 bytes. This will allow for 16 entries
+ *     entry will consist of 64 bytes. This will allow for 8 entries
  *     per cluster. The layout of the data contained in each directory 
  *     entry is as follows:
  *
@@ -23,24 +23,24 @@
  *                    Bit 3: 1 for system file
  *                    Bit 4: 1 for subdirectory
  *                    The remaining bits are unused
- *        (1-12)  | The file/directory name (12 chars max)
- *        (13-15) | The file/directory extension (3 chars max)
- *        (16-19) | Creation date/time
+ *        (1-43)  | The file/directory name (42 chars max)
+ *        (44-47) | The file/directory extension (3 chars max)
+ *        (48-51) | Creation date/time
  *                    Bits 0-5:   Year - 1985
  *                    Bits 6-9:   Month
  *                    Bits 10-14: Day
  *                    Bits 15-19: Hour
  *                    Bits 20-25: Minute
  *                    Bits 26-31: Second
- *        (20-23) | Last modified date/time
+ *        (52-55) | Last modified date/time
  *                    Bits 0-5:   Year - 1985
  *                    Bits 6-9:   Month
  *                    Bits 10-14: Day
  *                    Bits 15-19: Hour
  *                    Bits 20-25: Minute
  *                    Bits 26-31: Second
- *        (24-27) | Starting cluster of file (empty file: 0)
- *        (28-31) | The file size in bytes
+ *        (56-59) | Starting cluster of file (empty file: 0)
+ *        (60-63) | The file size in bytes
  *
  *     The entries will be organized within a directory cluster chain
  *     with entry addresses ranging from 0 upwards. The entry address
@@ -76,27 +76,17 @@ u_int createDirFileEntry(u_int clusterAddr, char attr, char *name, char *ext)
 	u_int entryAddr = getFirstFreeDirEntryAddr(clusterAddr);
 	u_int loc = getDirEntryLoc(clusterAddr, entryAddr);
 	u_int currentTime = encodeTimeBytes();
-
-	/* Set attributes */
-	writeNum(loc, 1, attr);
-
-	/* Set name */
-	writeStr(loc + 1, 12, name);
-
-	/* Set extension */
-	writeStr(loc + 13, 3, ext);
-
-	/* Set create date/time */
-	writeNum(loc + 16, 4, currentTime);
-
-	/* Set modified date/time */
-	writeNum(loc + 20, 4, currentTime);
-
-	/* Set starting cluster of file */
-	writeNum(loc + 24, 4, startCluster);
-
-	/* Set file size */
-	writeNum(loc + 28, 4, 0);
+	
+	DirEntry fileEntry;
+	fileEntry.attr = attr;
+	strncpy(fileEntry.fileName, name, FILE_NAME_MAX);
+	strncpy(fileEntry.fileExt, ext, FILE_EXT_SIZE);
+	fileEntry.createDate = currentTime;
+	fileEntry.modifiedDate = currentTime;
+	fileEntry.startCluster = startCluster;
+	fileEntry.fileSize = 0;
+	fseek(virDrive, loc, SEEK_SET);
+	fwrite(&fileEntry, sizeof(DirEntry), 1, virDrive);
 
 	return entryAddr;
 }
@@ -125,25 +115,32 @@ u_int createDirSubEntry(u_int clusterAddr, char attr, char *name)
 	u_int loc = getDirEntryLoc(clusterAddr, entryAddr);
 	u_int currentTime = encodeTimeBytes();
 
-	/* Set attributes */
-	writeNum(loc, 1, attr);
-
-	/* Set name */
-	writeStr(loc + 1, 12, name);
-
-	/* Set create date/time */
-	writeNum(loc + 16, 4, currentTime);
-
-	/* Set modified date/time */
-	writeNum(loc + 20, 4, currentTime);
-
-	/* Set starting cluster of directory */
-	writeNum(loc + 24, 4, startCluster);
-
-	/* Set file size */
-	writeNum(loc + 28, 4, 0);
+	DirEntry subEntry;
+	subEntry.attr = attr;
+	strncpy(subEntry.fileName, name, FILE_NAME_MAX);
+	subEntry.createDate = currentTime;
+	subEntry.modifiedDate = currentTime;
+	subEntry.startCluster = startCluster;
+	subEntry.fileSize = 0;
+	fseek(virDrive, loc, SEEK_SET);
+	fwrite(&subEntry, sizeof(DirEntry), 1, virDrive);
 
 	return entryAddr;
+}
+
+/**
+ * Deletes a directory entry
+ *
+ * @param dirCluster The starting cluster of the directory
+ * @param entryAddr  The address of the entry to delete
+ */
+void deleteDirEntry(u_int dirCluster, u_int entryAddr)
+{
+	u_int loc = getDirEntryLoc(dirCluster, entryAddr);
+	fseek(virDrive, loc, SEEK_SET);
+	int i;
+	for(i = 0; i < DIR_ENTRY_BYTES; i++)
+		fputc(0x00, virDrive);
 }
 
 /**
@@ -156,24 +153,22 @@ u_int createDirSubEntry(u_int clusterAddr, char attr, char *name)
  */
 u_int dirFileEntryExists(u_int clusterAddr, char *fileName, char *fileExt)
 {
-	char *entryName;
-	char *entryExt;
 	u_int found = 0;
 	u_int end = 0;
 	u_int entryAddr = 0;
 	u_int currentCluster = clusterAddr;
 	u_int nextCluster = 0;
+	DirEntry *entry;
 
 	while(!found && !end)
 	{
-		entryName = getDirEntryFileName(clusterAddr, entryAddr);
-		entryExt = getDirEntryFileExt(clusterAddr, entryAddr);
-		if(strcmp(entryName, fileName) == 0 && strcmp(entryExt, fileExt) == 0)
+		entry = getDirEntry(clusterAddr, entryAddr);
+		if(strcmp(entry->fileName, fileName) == 0 && strcmp(entry->fileExt, fileExt) == 0)
 			found = 1;
 		else
 		{
 			entryAddr++;
-			if(entryAddr % 16 == 0)
+			if(entryAddr % DIR_ENTRIES_PER_CLUSTER == 0)
 			{
 				nextCluster = fileAllocTable[currentCluster];
 				if(nextCluster == 0xffffffff)
@@ -181,6 +176,7 @@ u_int dirFileEntryExists(u_int clusterAddr, char *fileName, char *fileExt)
 				currentCluster = nextCluster;
 			}
 		}
+		free(entry);
 	}
 
 	return found;
@@ -196,24 +192,22 @@ u_int dirFileEntryExists(u_int clusterAddr, char *fileName, char *fileExt)
  */
 u_int getDirFileEntryAddr(u_int clusterAddr, char *fileName, char *fileExt)
 {
-	char *entryName;
-	char *entryExt;
 	u_int found = 0;
 	u_int end = 0;
 	u_int entryAddr = 0;
 	u_int currentCluster = clusterAddr;
 	u_int nextCluster = 0;
+	DirEntry *entry;
 
 	while(!found)
 	{
-		entryName = getDirEntryFileName(clusterAddr, entryAddr);
-		entryExt = getDirEntryFileExt(clusterAddr, entryAddr);
-		if(strcmp(entryName, fileName) == 0 && strcmp(entryExt, fileExt) == 0)
+		entry = getDirEntry(clusterAddr, entryAddr);
+		if(strcmp(entry->fileName, fileName) == 0 && strcmp(entry->fileExt, fileExt) == 0)
 			found = 1;
 		else
 		{
 			entryAddr++;
-			if(entryAddr % 16 == 0)
+			if(entryAddr % DIR_ENTRIES_PER_CLUSTER == 0)
 			{
 				nextCluster = fileAllocTable[currentCluster];
 				if(nextCluster == 0xffffffff)
@@ -221,8 +215,7 @@ u_int getDirFileEntryAddr(u_int clusterAddr, char *fileName, char *fileExt)
 				currentCluster = nextCluster;
 			}
 		}
-		free(entryName);
-		free(entryExt);
+		free(entry);
 	}
 
 	if(end)
@@ -246,9 +239,9 @@ u_int getDirFileEntryAddr(u_int clusterAddr, char *fileName, char *fileExt)
 char *getDirectoryListing(char *dirPath)
 {
 	char *listing;
-	char *dir = (char*) calloc(13, sizeof(char));
+	char *dir = (char*) calloc(FILE_NAME_MAX, sizeof(char));
 	u_int clusterAddr;
-	u_int nextClusterAddr;
+	DirEntry *entry;
 
 	if(strcmp_igncase(dirPath, "root") == 0)
 	{
@@ -262,13 +255,9 @@ char *getDirectoryListing(char *dirPath)
 		int i = 0;
 		while(p[i] != NULL && p[i+1] != NULL)
 		{
-			nextClusterAddr = getDirectoryClusterAddress(clusterAddr, p[i]);
-			if(nextClusterAddr == 0)
-			{
-				u_int entryAddr = createDirSubEntry(clusterAddr, 0x13, p[i]);
-				nextClusterAddr = getDirEntryStartCluster(clusterAddr, entryAddr);
-			}
-			clusterAddr = nextClusterAddr;
+			clusterAddr = getDirectoryClusterAddress(clusterAddr, p[i]);
+			if(clusterAddr == 0)
+				break;
 			i++;
 		}
 		strcpy(dir, p[i]);
@@ -289,7 +278,6 @@ char *getDirectoryListing(char *dirPath)
 	}
 	else
 	{
-		char attr;
 		int end = 0;
 		u_int count= 0;
 		u_int entryAddr = 0;
@@ -298,21 +286,22 @@ char *getDirectoryListing(char *dirPath)
 		/* Determine the number of files/directorys in the directory */
 		while(!end)
 		{
-			attr = getDirEntryAttr(clusterAddr, entryAddr);
-			if((attr & 0x1) ^ 0x1)
+			entry = getDirEntry(clusterAddr, entryAddr);
+			if((entry->attr & 0x1) ^ 0x1)
 				end = 1;
 			else
 			{
 				entryAddr++;
 				count++;
 			
-				if(entryAddr % 16 == 0)
+				if(entryAddr % DIR_ENTRIES_PER_CLUSTER == 0)
 				{
 					currentCluster = fileAllocTable[currentCluster];
 					if(currentCluster == 0xffffffff) /* No more entries to check */
 						end = 1;
 				}
 			}
+			free(entry);
 		}
 
 		/* Allocate space for the listing string */
@@ -328,32 +317,32 @@ char *getDirectoryListing(char *dirPath)
 		/* Record file info for each directory listing */
 		while(!end)
 		{
-			attr = getDirEntryAttr(clusterAddr, entryAddr);
-			if((attr & 0x1) ^ 0x1)
+			DirEntry *entry = getDirEntry(clusterAddr, entryAddr);
+			if((entry->attr & 0x1) ^ 0x1)
 				end = 1;
 			else
 			{
-				char fileName[18];
+				char fileName[47];
 				char timeStr[20];
 				char fileInfo[80];
 				char temp[50];
 				strcpy(fileInfo, "    ");
-				strncpy(fileName, getDirEntryFileName(clusterAddr, entryAddr), 12);
-				if((attr & 0x10) ^ 0x10)
+				strncpy(fileName, entry->fileName, FILE_NAME_MAX);
+				if((entry->attr & 0x10) ^ 0x10)
 				{
 					strncat(fileName, ".", 1);
-					strncat(fileName, getDirEntryFileExt(clusterAddr, entryAddr), 3);
+					strncat(fileName, entry->fileExt, FILE_EXT_SIZE);
 				}
 				sprintf(temp, "%-18s", fileName);
 				strcat(fileInfo, temp);
 
-				if((attr & 0x10) ^ 0x10)
-					sprintf(temp, " | %9ld", getDirEntryFileSize(clusterAddr, entryAddr));
+				if((entry->attr & 0x10) ^ 0x10)
+					sprintf(temp, " | %9u", entry->fileSize);
 				else
 					sprintf(temp, " |     -    ");
 				strcat(fileInfo, temp);
 
-				struct tm *createTime = decodeTimeBytes(getDirEntryCreateTimeBytes(clusterAddr, entryAddr));
+				struct tm *createTime = decodeTimeBytes(entry->createDate);
 
 				sprintf(timeStr, "%04d-%02d-%02d %02d:%02d:%02d",
 					    createTime->tm_year,
@@ -362,20 +351,20 @@ char *getDirectoryListing(char *dirPath)
 					    createTime->tm_hour,
 					    createTime->tm_min,
 					    createTime->tm_sec);
-
+				free(createTime);
 				sprintf(temp, " | %19s", timeStr);
 				strcat(fileInfo, temp);
 
-				struct tm *modTime = decodeTimeBytes(getDirEntryModifiedTimeBytes(clusterAddr, entryAddr));
+				struct tm *modifiedTime = decodeTimeBytes(entry->modifiedDate);
 
 				sprintf(timeStr, "%04d-%02d-%02d %02d:%02d:%02d",
-					    modTime->tm_year,
-					    modTime->tm_mon,
-					    modTime->tm_mday,
-					    modTime->tm_hour,
-					    modTime->tm_min,
-					    modTime->tm_sec);
-
+					    modifiedTime->tm_year,
+					    modifiedTime->tm_mon,
+					    modifiedTime->tm_mday,
+					    modifiedTime->tm_hour,
+					    modifiedTime->tm_min,
+					    modifiedTime->tm_sec);
+				free(modifiedTime);
 				sprintf(temp, " | %19s", timeStr);
 				strcat(fileInfo, temp);
 
@@ -383,13 +372,14 @@ char *getDirectoryListing(char *dirPath)
 				strcat(listing, "\n");
 			
 				entryAddr++;
-				if(entryAddr % 16 == 0)
+				if(entryAddr % DIR_ENTRIES_PER_CLUSTER == 0)
 				{
 					currentCluster = fileAllocTable[currentCluster];
 					if(currentCluster == 0xffffffff) /* No more entries to check */
 						end = 1;
 				}
 			}
+			free(entry);
 		}
 		strcat(listing, "  ==============================================================================\n");
 	}
@@ -399,7 +389,7 @@ char *getDirectoryListing(char *dirPath)
 
 /**
  * Returns the directory cluster address of a directory. Searches through a 
- * given directory for a subdirectory of a given name. Returns if no matching 
+ * given directory for a subdirectory of a given name. Returns 0 if no matching 
  * directory is found.
  *
  * @param  currentClusterAddr The cluster address of the directory to search
@@ -408,38 +398,37 @@ char *getDirectoryListing(char *dirPath)
  */
 u_int getDirectoryClusterAddress(u_int currentClusterAddr, char *dirName)
 {
-	u_int dirClusterAddress = 0;
-	char attr;
-	char *name;
 	int end = 0;
 	int found = 0;
 	u_int entryAddr = 0;
 	u_int currentCluster = currentClusterAddr;
 	u_int nextCluster = 0;
+	u_int dirClusterAddress = 0;
+	DirEntry *entry;
 
 	while(!found && !end)
 	{
-		attr = getDirEntryAttr(currentClusterAddr, entryAddr);
-		if(!(attr & 0x1))
+		entry = getDirEntry(currentClusterAddr, entryAddr);
+		if(!(entry->attr & 0x1))
 			end = 1;
-		else if(attr & 0x10) /* Subdirectory */
+		else if(entry->attr & 0x10) /* Subdirectory */
 		{
-			name = getDirEntryFileName(currentClusterAddr, entryAddr);
-			if(strcmp(name, dirName) == 0)
+			if(strcmp(entry->fileName, dirName) == 0)
 			{
 				found = 1;
-				dirClusterAddress = getDirEntryStartCluster(currentClusterAddr, entryAddr);
+				dirClusterAddress = entry->startCluster;
 			}
 		}
 		entryAddr++;
 	
-		if(entryAddr % 16 == 0)
+		if(entryAddr % DIR_ENTRIES_PER_CLUSTER == 0)
 		{
 			nextCluster = fileAllocTable[currentCluster];
 			if(nextCluster == 0xffffffff)
 				nextCluster = addClusterToChain(currentCluster);
 			currentCluster = nextCluster;
 		}
+		free(entry);
 	}
 
 	return dirClusterAddress;
@@ -546,8 +535,8 @@ u_int getDirEntryLoc(u_int dirCluster, u_int entryAddr)
 	while(entry < entryAddr)
 	{
 		entry++;
-		loc += 32;
-		if(entry % 16 == 0)
+		loc += DIR_ENTRY_BYTES;
+		if(entry % DIR_ENTRIES_PER_CLUSTER == 0)
 		{
 			nextCluster = fileAllocTable[currentCluster];
 			if(nextCluster == 0xffffffff)
@@ -571,22 +560,22 @@ u_int getDirEntryLoc(u_int dirCluster, u_int entryAddr)
  */
 u_int getFirstFreeDirEntryAddr(u_int dirCluster)
 {
-	char attr;
 	int found = 0;
 	u_int entryAddr = 0;
 	u_int currentCluster = dirCluster;
 	u_int nextCluster = 0;
+	DirEntry *entry;
 
 	while(!found)
 	{
-		attr = getDirEntryAttr(dirCluster, entryAddr);
-		if((attr & 0x1) ^ 0x1)
+		entry = getDirEntry(currentCluster, entryAddr);
+		if((entry->attr & 0x1) ^ 0x1)
 			found = 1;
 		else
 		{
 			entryAddr++;
 		
-			if(entryAddr % 16 == 0)
+			if(entryAddr % DIR_ENTRIES_PER_CLUSTER == 0)
 			{
 				nextCluster = fileAllocTable[currentCluster];
 				if(nextCluster == 0xffffffff)
@@ -600,206 +589,32 @@ u_int getFirstFreeDirEntryAddr(u_int dirCluster)
 }
 
 /**
- * Returns the attributes byte of a given directory entry.
+ * Returns a directory entry from a given directory
  *
  * @param  dirCluster The address of the directory cluster containing the entry
  * @param  entryAddr  The address of the entry within the directory cluster
- * @return            The attributes byte of the entry
+ * @return            The directory entry struct
  */
-char getDirEntryAttr(u_int dirCluster, u_int entryAddr)
+DirEntry *getDirEntry(u_int dirCluster, u_int entryAddr)
 {
+	DirEntry *entry = calloc(1, sizeof(*entry));
 	u_int loc = getDirEntryLoc(dirCluster, entryAddr);
+	fseek(virDrive, loc, SEEK_SET);
+	fread(entry, sizeof(*entry), 1, virDrive);
 
-	return (char) readNum(loc, 1);
+	return entry;
 }
 
 /**
- * Returns the file name of a given directory entry
+ * Sets a directory entry in a given directory
  *
  * @param  dirCluster The address of the directory cluster containing the entry
  * @param  entryAddr  The address of the entry within the directory cluster
- * @return            A string containing the file name (12 chars max)
+ * @param  entry      The directory entry
  */
-char *getDirEntryFileName(u_int dirCluster, u_int entryAddr)
+void setDirEntry(u_int dirCluster, u_int entryAddr, DirEntry *entry)
 {
 	u_int loc = getDirEntryLoc(dirCluster, entryAddr);
-
-	return readStr(loc + 1, 12);
-}
-
-/**
- * Returns the file extension of a given directory entry
- *
- * @param  dirCluster The address of the directory cluster containing the entry
- * @param  entryAddr  The address of the entry within the directory cluster
- * @return            A string containing the file extension (3 chars max)
- */
-char *getDirEntryFileExt(u_int dirCluster, u_int entryAddr)
-{
-	u_int loc = getDirEntryLoc(dirCluster, entryAddr);
-
-	return readStr(loc + 13, 3);
-}
-
-/**
- * Returns the encoded create date/time of a given directory entry
- *
- * @param  dirCluster The address of the directory cluster containing the entry
- * @param  entryAddr  The address of the entry within the directory cluster
- * @return            The encoded create date/time stamp (4 bytes)
- */
-u_int getDirEntryCreateTimeBytes(u_int dirCluster, u_int entryAddr)
-{
-	u_int loc = getDirEntryLoc(dirCluster, entryAddr);
-
-	return readNum(loc + 16, 4);
-}
-
-/**
- * Returns the encoded last modified date/time of a given directory entry
- *
- * @param  dirCluster The address of the directory cluster containing the entry
- * @param  entryAddr  The address of the entry within the directory cluster
- * @return            The encoded modified date/time stamp (4 bytes)
- */
-u_int getDirEntryModifiedTimeBytes(u_int dirCluster, u_int entryAddr)
-{
-	u_int loc = getDirEntryLoc(dirCluster, entryAddr);
-
-	return readNum(loc + 20, 4);
-}
-
-/**
- * Returns the starting cluster address of a given directory entry
- *
- * @param  dirCluster The address of the directory cluster containing the entry
- * @param  entryAddr  The address of the entry within the directory cluster
- * @return            The starting cluster address (4 bytes)
- */
-u_int getDirEntryStartCluster(u_int dirCluster, u_int entryAddr)
-{
-	u_int loc = getDirEntryLoc(dirCluster, entryAddr);
-
-	return readNum(loc + 24, 4);
-}
-
-/**
- * Returns the file size of a given directory entry
- *
- * @param  dirCluster The address of the directory cluster containing the entry
- * @param  entryAddr  The address of the entry within the directory cluster
- * @return            The encoded modified date/time stamp (4 bytes)
- */
-u_int getDirEntryFileSize(u_int dirCluster, u_int entryAddr)
-{
-	u_int loc = getDirEntryLoc(dirCluster, entryAddr);
-
-	return readNum(loc + 28, 4);
-}
-
-/**
- * Sets the attribute byte of a given directory entry
- *
- * @param dirCluster The address of the directory cluster containing the entry
- * @param entryAddr  The address of the entry within the directory cluster
- * @param attr       The attribute byte
- */
-void setDirEntryAttr(u_int dirCluster, u_int entryAddr, char attr)
-{
-	u_int loc = getDirEntryLoc(dirCluster, entryAddr);
-	writeNum(loc, 1, attr);
-}
-
-/**
- * Sets the file name of a given directory entry
- *
- * @param dirCluster The address of the directory cluster containing the entry
- * @param entryAddr  The address of the entry within the directory cluster
- * @param name       A string containing the file name (12 chars max)
- */
-void setDirEntryFileName(u_int dirCluster, u_int entryAddr, char *name)
-{
-	u_int loc = getDirEntryLoc(dirCluster, entryAddr);
-	writeStr(loc + 1, 12, name);
-}
-
-/**
- * Sets the file extension of a given directory entry
- *
- * @param dirCluster The address of the directory cluster containing the entry
- * @param entryAddr  The address of the entry within the directory cluster
- * @param ext        A string containing the file extension (3 chars max)
- */
-void setDirEntryFileExt(u_int dirCluster, u_int entryAddr, char *ext)
-{
-	u_int loc = getDirEntryLoc(dirCluster, entryAddr);
-	writeStr(loc + 13, 3, ext);
-}
-
-/**
- * Sets the modified date/time of a given directory entry
- *
- * @param dirCluster The address of the directory cluster containing the entry
- * @param entryAddr  The address of the entry within the directory cluster
- * @param timeBytes  The encoded modified date/time stamp
- */
-void setDirEntryModifiedTimeBytes(u_int dirCluster, u_int entryAddr, u_int timeBytes)
-{
-	u_int loc = getDirEntryLoc(dirCluster, entryAddr);
-	writeNum(loc + 20, 4, timeBytes);
-}
-
-/**
- * Sets the starting cluster of a given directory entry
- *
- * @param dirCluster  The address of the directory cluster containing the entry
- * @param entryAddr   The address of the entry within the directory cluster
- * @param clusterAddr The starting cluster address
- */
-void setDirEntryStartCluster(u_int dirCluster, u_int entryAddr, u_int clusterAddr)
-{
-	u_int loc = getDirEntryLoc(dirCluster, entryAddr);
-	writeNum(loc + 24, 4, clusterAddr);
-}
-
-/**
- * Sets the file size of a given directory entry
- *
- * @param dirCluster The address of the directory cluster containing the entry
- * @param entryAddr  The address of the entry within the directory cluster
- * @param timeBytes  The file size
- */
-void setDirEntryFileSize(u_int dirCluster, u_int entryAddr, u_int fileSize)
-{
-	u_int loc = getDirEntryLoc(dirCluster, entryAddr);
-	writeNum(loc + 28, 4, fileSize);
-}
-
-/**
- * Adjusts the file size of a given directory entry
- *
- * @param  dirCluster  The address of the directory cluster containing the entry
- * @param  entryAddr   The address of the entry within the directory cluster
- * @param  adjFileSize The adjustment to the file size
- * @param  increase    1 to increase by the adjusted size, 0 to decrease
- * @return             1 if successful, 0 if invalid input
- */
-u_int adjustDirEntryFileSize(u_int dirCluster, u_int entryAddr, u_int adjFileSize, u_int increase)
-{
-	u_int fileSize = getDirEntryFileSize(dirCluster, entryAddr);
-	if(increase)
-		fileSize += adjFileSize;
-	else
-	{
-		if(adjFileSize > fileSize)
-		{
-			/* Invalid input */
-			return 0;
-		}
-		else
-			fileSize -= adjFileSize;
-	}
-	setDirEntryFileSize(dirCluster, entryAddr, fileSize);
-
-	return 1;
+	fseek(virDrive, loc, SEEK_SET);
+	fwrite(entry, sizeof(*entry), 1, virDrive);
 }

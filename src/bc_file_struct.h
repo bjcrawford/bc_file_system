@@ -8,12 +8,18 @@
  *  TAs: Liang and Casey
  *  Date: 2014-12-05
  *  Description: 
+ *     This file contains the struct which represents the properties
+ *     contained within a bc file struct. For a more detailed explanation
+ *     of the properties see the documentation in bc_file_struct.c
+ *     
+ *     This program was written for use in Linux.
 */
 
 #ifndef BC_FILE_STRUCT
 #define BC_FILE_STRUCT
 
 #include <stdlib.h>
+#include "bc_header.h"
 
 typedef struct
 {
@@ -21,8 +27,8 @@ typedef struct
 	u_int write;
 	u_int hidden;
 	u_int subDir;
-	char *fileName;
-	char *fileExt;
+	char fileName[FILE_NAME_MAX + 1];
+	char fileExt[FILE_EXT_SIZE + 1];
 	u_int createDate;
 	u_int modifyDate;
 	u_int filePosition;
@@ -36,7 +42,7 @@ typedef struct
 
 } BC_FILE;
 
-void bc_rewind(BC_FILE*);
-void freeBC_File(BC_FILE*);
+void rewindBC_File(BC_FILE*);
+void destroyBC_File(BC_FILE*);
 
 #endif

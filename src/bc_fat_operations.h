@@ -7,7 +7,11 @@
  *  Prof: Kwatny
  *  TAs: Liang and Casey
  *  Date: 2014-12-05
- *  Description: This program was written for use in Linux.
+ *  Description: 
+ *     This file contains the header elements for the bc_fat_operations.c
+ *     file.
+ * 
+ *     This program was written for use in Linux.
 */
 
 #ifndef BC_FAT_OPERATIONS
@@ -15,9 +19,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "bc_file_system.h"
-#include "bc_drive_operations.h"
-#include "bc_boot_operations.h"
+#include "bc_header.h"
 
 u_int *initFATClusters();
 

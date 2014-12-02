@@ -7,7 +7,11 @@
  *  Prof: Kwatny
  *  TAs: Liang and Casey
  *  Date: 2014-12-05
- *  Description: This program was written for use in Linux.
+ *  Description: 
+ *     This file contains the header elements for the bc_drive_operations.c
+ *     file.
+ * 
+ *     This program was written for use in Linux.
 */
 
 #ifndef BC_DRIVE_OPERATIONS
@@ -15,17 +19,15 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "bc_boot_operations.h"
-#include "bc_fat_operations.h"
+#include "bc_header.h"
 
 FILE *openVirDrive(char *virDriveName);
 void formatVirDrive();
 void closeVirDrive();
-
 
 void writeNum(u_int loc, u_int len, u_int num);
 void writeStr(u_int loc, u_int len, char *str);
 u_int readNum(u_int loc, u_int len);
 char *readStr(u_int loc, u_int len);
 
- #endif
+#endif

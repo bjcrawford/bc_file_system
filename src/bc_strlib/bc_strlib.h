@@ -3,12 +3,12 @@
    Date: 2014-03-25
    Description: This file is part of the bc_strlib */
 
+#ifndef BC_STRLIB
+#define BC_STRLIB
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#ifndef BC_STRLIB
-#define BC_STRLIB
 
 char  *append(char*, char*);
 char **chop(char*, char);

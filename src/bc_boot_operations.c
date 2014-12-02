@@ -16,16 +16,16 @@
  *        (bytes) | value 
  *       ---------------------------------------------------------------
  *        (0)      | A byte designating the virtual drive as initialized
- *        (1-20)   | A label for the virtual drive
- *        (21-24)  | The number of bytes per cluster
- *        (25-28)  | The number of reserved clusters
- *        (29-32)  | The number of clusters on the virtual drive
- *        (33-36)  | The number of clusters per file allocation table
- *        (37-40)  | The first cluster of the root directory
- *        (41-44)  | The number of free clusters
- *        (45-48)  | The next free cluster
- *        (49-52)  | The size of the virtual drive in bytes
- *        (53-511) | This space is unused
+ *        (1-23)   | A label for the virtual drive
+ *        (24-27)  | The number of bytes per cluster
+ *        (28-31)  | The number of reserved clusters
+ *        (32-35)  | The number of clusters on the virtual drive
+ *        (36-39)  | The number of clusters per file allocation table
+ *        (40-43)  | The first cluster of the root directory
+ *        (44-47)  | The number of free clusters
+ *        (48-51)  | The next free cluster
+ *        (52-55)  | The size of the virtual drive in bytes
+ *        (55-511) | This space is unused
  *
  *     The boot record will be represented in the file system application 
  *     as a struct containing all of the properties listed above. 
@@ -35,6 +35,14 @@
 
 #include "bc_boot_operations.h"
 
+/**
+ * Initializes a boot record struct for the virtual drive.
+ * NOTE: This function does not write the boot record struct to
+ * the virtual drive.
+ *
+ * @param  driveLabel A string containing the label for the drive
+ * @return            An pointer to an initialized boot record struct
+ */
 BootRecord *initBootRecord(char *driveLabel)
 {
 	BootRecord *boot = calloc(1, sizeof(*boot));
@@ -47,11 +55,11 @@ BootRecord *initBootRecord(char *driveLabel)
 	rewind(virDrive);
 
 	boot->init = 1;
-	strncpy(boot->label, driveLabel, 20);
+	strncpy(boot->label, driveLabel, DRIVE_LABEL_MAX);
 	boot->bytesPerCluster = CLUSTER_SIZE;
 	boot->reservedClusters = 1;
 	boot->clustersOnDrive = dSize / CLUSTER_SIZE;
-	boot->clustersPerFat = ceil((double) boot->clustersOnDrive * FAT_ENTRY_BYTES) / CLUSTER_SIZE;
+	boot->clustersPerFat = ceil((double) boot->clustersOnDrive * FAT_ENTRY_BYTES / CLUSTER_SIZE);
 	boot->rootDirStart = boot->clustersPerFat + 1;
 	boot->freeClusters = boot->clustersOnDrive - (boot->clustersPerFat + 2);
 	boot->nextFreeCluster = boot->clustersPerFat + 2;
@@ -60,14 +68,21 @@ BootRecord *initBootRecord(char *driveLabel)
 	return boot;
 }
 
+/**
+ * Writes the global boot record struct to the virtual drive
+ */
 void writeBootRecord()
 {
 	rewind(virDrive);
-	fwrite(bootRecord, sizeof(bootRecord), 1, virDrive);
+	fwrite(bootRecord, sizeof(BootRecord), 1, virDrive);
 }
 
+/**
+ * Reads the boot record from the drive and stores it in the
+ * global boot record struct
+ */
 void readBootRecord()
 {
 	rewind(virDrive);
-	fread(bootRecord, sizeof(bootRecord), 1, virDrive);
+	fread(bootRecord, sizeof(BootRecord), 1, virDrive);
 }

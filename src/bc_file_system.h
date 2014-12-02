@@ -9,61 +9,21 @@
  *  Date: 2014-12-05
  *  Description: 
  *     This file contains the necessary includes for my file system
- *     implementation. The file also contains some constants to be 
- *     used in the file system as specified in the project guidelines.
+ *     implementation. 
  *     
  *     This program was written for use in Linux.
 */
 
-
 #ifndef BC_FILE_SYSTEM
 #define BC_FILE_SYSTEM
- 
-#include "bc_boot_record_struct.h"
+
 #include "bc_drive_operations.h"
 #include "bc_boot_operations.h"
+#include "bc_fat_operations.h"
 #include "bc_dir_operations.h"
 #include "bc_file_operations.h"
-#include "bc_strlib/bc_strlib.h"
-
-/* Type definitions */
-
-typedef unsigned int u_int;
-
-/* Constants */
-
-/* The minimum file name length */
-#define FILE_NAME_MIN 8
-
-/* The maximum file name length */
-#define FILE_NAME_MAX 12
-
-/* The required file extension length */
-#define FILE_EXT_SIZE 3
-
-/* The maximum file size */
-#define FILE_SIZE_MAX 16384
-
-/* The allocation unit/cluster size */
-#define CLUSTER_SIZE 512
-
-/* The bytes per file allocation table entry */
-#define FAT_ENTRY_BYTES 4
-
-/* Globals */
-
-/* The file pointer of the virtual drive file */
-FILE *virDrive;
-
-/* The boot record data structure */
-BootRecord *bootRecord;
-
-/* An array representing the file allocation table */
-u_int *fileAllocTable;
-
-/* Functions */
 
 void initFileSystem(char *virDriveName, char *virDriveLabel);
-
+void closeFileSystem();
 
 #endif

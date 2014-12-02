@@ -305,9 +305,9 @@ char *getDirectoryListing(char *dirPath)
 		}
 
 		/* Allocate space for the listing string */
-		listing = calloc(80 * (count + 3), sizeof(char));
-		strcpy(listing, "    File Name          | File Size |  Date/Time Created  |  Date/Time Modified \n");
-		strcat(listing, "  ==============================================================================\n");
+		listing = calloc(100 * (count + 3), sizeof(char));
+		strcpy(listing, "    File Name          | File Size |  Date/Time Created  |  Date/Time Modified | Start Cluster \n");
+		strcat(listing, "  ==============================================================================================\n");
 
 		/* Reset iteration variables */
 		end = 0;
@@ -324,7 +324,7 @@ char *getDirectoryListing(char *dirPath)
 			{
 				char fileName[47];
 				char timeStr[20];
-				char fileInfo[80];
+				char fileInfo[100];
 				char temp[50];
 				strcpy(fileInfo, "    ");
 				strncpy(fileName, entry->fileName, FILE_NAME_MAX);
@@ -368,6 +368,9 @@ char *getDirectoryListing(char *dirPath)
 				sprintf(temp, " | %19s", timeStr);
 				strcat(fileInfo, temp);
 
+				sprintf(temp, " | %13u", entry->startCluster);
+				strcat(fileInfo, temp);
+
 				strcat(listing, fileInfo);
 				strcat(listing, "\n");
 			
@@ -381,7 +384,7 @@ char *getDirectoryListing(char *dirPath)
 			}
 			free(entry);
 		}
-		strcat(listing, "  ==============================================================================\n");
+		strcat(listing, "  ==============================================================================================\n");
 	}
 
 	return listing;

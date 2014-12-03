@@ -72,6 +72,7 @@ u_int createDirFileEntry(u_int clusterAddr, char attr, char *name, char *ext)
 	u_int startCluster = bootRecord->nextFreeCluster;
 	fileAllocTable[startCluster] = 0xffffffff;
 	findAndSetNextFreeCluster(virDrive);
+	bootRecord->freeClusters--;
 
 	u_int entryAddr = getFirstFreeDirEntryAddr(clusterAddr);
 	u_int loc = getDirEntryLoc(clusterAddr, entryAddr);
@@ -110,6 +111,7 @@ u_int createDirSubEntry(u_int clusterAddr, char attr, char *name)
 	u_int startCluster = bootRecord->nextFreeCluster;
 	fileAllocTable[startCluster] = 0xffffffff;
 	findAndSetNextFreeCluster(virDrive);
+	bootRecord->freeClusters--;
 
 	u_int entryAddr = getFirstFreeDirEntryAddr(clusterAddr);
 	u_int loc = getDirEntryLoc(clusterAddr, entryAddr);

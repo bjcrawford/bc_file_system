@@ -366,5 +366,24 @@ void closeFile(BC_FILE *file)
 
 void deleteFile(BC_FILE *file)
 {
-	
+	/* Zero used clusters and FAT entries*/
+	u_int currentCluster = file->startClusterAddr;
+	u_int nextCluster = fileAllocTable[currentCluster];
+	while(nextCluster != 0xffffffff)
+	{
+		formatCluster(currentCluster);
+		fileAllocTable[currentCluster] = 0x00000000;
+		currentCluster = nextCluster;
+		nextCluster = fileAllocTable[currentCluster];
+		bootRecord->freeClusters++;
+	}
+	formatCluster(currentCluster);
+	fileAllocTable[currentCluster] = 0x00000000;
+	bootRecord->freeClusters++;
+	findAndSetNextFreeCluster();
+
+	/* Zero directory entry */
+	deleteDirEntry(file->dirClusterAddr, file->dirEntryAddr);
+
+	destroyBC_File(file);
 }

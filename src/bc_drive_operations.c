@@ -73,6 +73,20 @@ void closeVirDrive()
 }
 
 /**
+ * Formats the given cluster on the virtual drive
+ *
+ * @param clusterAddr The address of the cluster to format
+ */
+void formatCluster(u_int clusterAddr)
+{
+	u_int i;
+	u_int loc = clusterAddr * bootRecord->bytesPerCluster;
+	fseek(virDrive, loc, SEEK_SET);
+	for(i = 0; i < bootRecord->bytesPerCluster; i++)
+		fputc(0x00, virDrive);
+}
+
+/**
  * Writes a non-negative value to the virtual drive (file)
  *
  * @param loc      The offset in bytes at which to write the value

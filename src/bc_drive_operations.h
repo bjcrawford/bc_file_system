@@ -25,6 +25,8 @@ FILE *openVirDrive(char *virDriveName);
 void formatVirDrive();
 void closeVirDrive();
 
+void formatCluster(u_int clusterAddr);
+
 void writeNum(u_int loc, u_int len, u_int num);
 void writeStr(u_int loc, u_int len, char *str);
 u_int readNum(u_int loc, u_int len);

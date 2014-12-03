@@ -280,7 +280,8 @@ void writeFile(void *src, u_int len, BC_FILE *dest)
 
 			if(lenLeft < bytesLeft) /* write to current cluster only */
 			{
-				writeStr(dest->currentLoc, lenLeft, src);
+				fseek(virDrive, dest->currentLoc, SEEK_SET);
+				fwrite(src, 1, lenLeft, virDrive);
 				dest->currentLoc += lenLeft;
 				lenLeft -= lenLeft;
 			}
@@ -288,7 +289,8 @@ void writeFile(void *src, u_int len, BC_FILE *dest)
 			{
 				void *srcChunk = calloc(bytesLeft, sizeof(char));
 				memcpy(srcChunk, src, bytesLeft);
-				writeStr(dest->currentLoc, bytesLeft, srcChunk);
+				fseek(virDrive, dest->currentLoc, SEEK_SET);
+				fwrite(srcChunk, 1, bytesLeft, virDrive);
 				free(srcChunk);
 				u_int nextClusterAddr = fileAllocTable[dest->currentClusterAddr];
 				if(nextClusterAddr != 0xffffffff)
@@ -330,7 +332,9 @@ void readFile(void *dest, u_int size, u_int len, BC_FILE *src)
 	{
 		bytesLeft = ((src->currentClusterAddr + 1) * bootRecord->bytesPerCluster) - src->currentLoc; 
 
-		char *srcChunk = readStr(src->currentLoc, lenLeft);
+		char *srcChunk = calloc(lenLeft, sizeof(char));
+		fseek(virDrive, src->currentLoc, SEEK_SET);
+		fread(srcChunk, sizeof(char), lenLeft, virDrive);
 		memcpy(dest, srcChunk, lenLeft);
 		free(srcChunk);
 

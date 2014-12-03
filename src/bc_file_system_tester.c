@@ -12,8 +12,11 @@
 
 #include "bc_file_system.h"
 
+#define PAUSE 0
+
 void printBootClusterInfo();
 void printDirectoryListing(char *dir);
+void pause(int pause);
 
 int main(int argc, char **argv)
 {
@@ -28,8 +31,7 @@ int main(int argc, char **argv)
 
 	printBootClusterInfo();
 
-	fprintf(stdout, "Press enter to continue\n");
-	getchar();
+	pause(PAUSE);
 
 	fprintf(stdout, "Opening 'testfile0.txt'\n");
 	BC_FILE *testfile0 = openFile("testfile0.txt");
@@ -46,8 +48,7 @@ int main(int argc, char **argv)
 
 	printBootClusterInfo();
 
-	fprintf(stdout, "Press enter to continue\n");
-	getchar();
+	pause(PAUSE);
 
 	fprintf(stdout, "Opening 'directory1/directory2/directory3/testfile2.txt'\n");
 	BC_FILE *testfile2 = openFile("directory1/directory2/directory3/testfile2.txt");
@@ -59,8 +60,7 @@ int main(int argc, char **argv)
 	printDirectoryListing("directory1/directory2");
 	printDirectoryListing("directory1/directory2/directory3");
 
-	fprintf(stdout, "Press enter to continue\n");
-	getchar();
+	pause(PAUSE);
 
 	fprintf(stdout, "Writing 69 characters to 'directory1/directory2/directory3/testfile2.txt'\n");
 	char *test69 = "The man in black fled across the desert, and the gunslinger followed.";
@@ -81,8 +81,7 @@ int main(int argc, char **argv)
 	printDirectoryListing("directory1/directory2");
 	printDirectoryListing("directory1/directory2/directory3");
 
-	fprintf(stdout, "Press enter to continue\n");
-	getchar();
+	pause(PAUSE);
 
 	fprintf(stdout, "Rewinding and reading 69 characters from 'directory1/directory2/directory3/testfile2.txt':\n\n");
 	rewindBC_File(testfile2);
@@ -114,8 +113,7 @@ int main(int argc, char **argv)
 	printDirectoryListing("directory1/directory2");
 	printDirectoryListing("directory1/directory2/directory3");
 
-	fprintf(stdout, "Press enter to continue\n");
-	getchar();
+	pause(PAUSE);
 
 	fprintf(stdout, "Attempting to print non-existent directories\n");
 
@@ -123,8 +121,22 @@ int main(int argc, char **argv)
 	printDirectoryListing("directory1/directory4/directory3");
 	printDirectoryListing("directory1/directory2/directory3/directory4");
 
-	fprintf(stdout, "Closing 'testfile0.txt'\n");
-	closeFile(testfile0);
+	pause(PAUSE);
+
+	fprintf(stdout, "Deleting 'testfile0.txt'\n");
+	deleteFile(testfile0);
+
+	printBootClusterInfo();
+
+	fprintf(stdout, "\n");
+	printDirectoryListing("root");
+	printDirectoryListing("directory0");
+	printDirectoryListing("directory1");
+	printDirectoryListing("directory1/directory2");
+	printDirectoryListing("directory1/directory2/directory3");
+
+	pause(PAUSE);
+
 	fprintf(stdout, "Closing 'testfile1.txt'\n");
 	closeFile(testfile1);
 	fprintf(stdout, "Closing 'testfile2.txt'\n");
@@ -141,7 +153,7 @@ void printBootClusterInfo()
 	fprintf(stdout, "    Parameter                   |        Value       \n");
 	fprintf(stdout, "  ===================================================\n");
 	fprintf(stdout, "    Initialized                 | %17u\n", bootRecord->init);
-	fprintf(stdout, "    Drive Label                 | %17s\n",  bootRecord->label);
+	fprintf(stdout, "    Drive Label                 | %17s\n", bootRecord->label);
 	fprintf(stdout, "    Bytes Per Cluster           | %17u\n", bootRecord->bytesPerCluster);
 	fprintf(stdout, "    Number Of Reserved Clusters | %17u\n", bootRecord->reservedClusters);
 	fprintf(stdout, "    Number Of Clusters On Drive | %17u\n", bootRecord->clustersOnDrive);
@@ -156,6 +168,15 @@ void printBootClusterInfo()
 void printDirectoryListing(char *dir)
 {
 	char *listing = getDirectoryListing(dir);
-	fprintf(stdout, "%s/ directory listing: \n\n%s\n", dir, listing);
+	fprintf(stdout, "'%s/' directory listing: \n\n%s\n", dir, listing);
 	free(listing);
+}
+
+void pause(int pause)
+{
+	if(pause)
+	{
+		fprintf(stdout, "Press enter to continue\n");
+		getchar();
+	}
 }

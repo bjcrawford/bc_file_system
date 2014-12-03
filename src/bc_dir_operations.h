@@ -17,6 +17,7 @@
 #ifndef BC_DIR_OPERATIONS
 #define BC_DIR_OPERATIONS
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

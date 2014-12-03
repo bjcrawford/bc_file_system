@@ -65,7 +65,7 @@
  *                       The remaining bits are unused
  * @param  name        The name of the file/directory (maximum 12 characters)
  * @param  ext         The extension of the file (maximum 3 characters)
- * #return             The entry address of the new file
+ * @return             The entry address of the new file
  */
 u_int createDirFileEntry(u_int clusterAddr, char attr, char *name, char *ext)
 {
@@ -102,7 +102,7 @@ u_int createDirFileEntry(u_int clusterAddr, char attr, char *name, char *ext)
  *                       Bit 3: 1 for system directory
  *                       Bit 4: 1 for subdirectory
  *                       The remaining bits are unused
- * @param  name        The name of the directory (maximum 12 characters)
+ * @param  name        The name of the directory (maximum 42 characters)
  * @return             The starting cluster address of the subdirectory
  */
 u_int createDirSubEntry(u_int clusterAddr, char attr, char *name)
@@ -261,7 +261,8 @@ char *getDirectoryListing(char *dirPath)
 			i++;
 		}
 		strcpy(dir, p[i]);
-		clusterAddr = getDirectoryClusterAddress(clusterAddr, dir);
+		if(clusterAddr)
+			clusterAddr = getDirectoryClusterAddress(clusterAddr, dir);
 	}
 	else
 	{
@@ -279,27 +280,22 @@ char *getDirectoryListing(char *dirPath)
 	else
 	{
 		int end = 0;
-		u_int count= 0;
+		u_int count = 0;
 		u_int entryAddr = 0;
 		u_int currentCluster = clusterAddr;
 
-		/* Determine the number of files/directorys in the directory */
+		/* Determine the number of files/directories in the directory */
 		while(!end)
 		{
 			entry = getDirEntry(clusterAddr, entryAddr);
-			if((entry->attr & 0x1) ^ 0x1)
-				end = 1;
-			else
-			{
-				entryAddr++;
+			entryAddr++;
+			if(entry->attr & 0x01)
 				count++;
-			
-				if(entryAddr % DIR_ENTRIES_PER_CLUSTER == 0)
-				{
-					currentCluster = fileAllocTable[currentCluster];
-					if(currentCluster == 0xffffffff) /* No more entries to check */
-						end = 1;
-				}
+			if(entryAddr % DIR_ENTRIES_PER_CLUSTER == 0)
+			{
+				currentCluster = fileAllocTable[currentCluster];
+				if(currentCluster == 0xffffffff) /* No more entries to check */
+					end = 1;
 			}
 			free(entry);
 		}
@@ -310,17 +306,17 @@ char *getDirectoryListing(char *dirPath)
 		strcat(listing, "  ==============================================================================================\n");
 
 		/* Reset iteration variables */
+		u_int i = 0;
 		end = 0;
 		entryAddr = 0;
 		currentCluster = clusterAddr;
 
 		/* Record file info for each directory listing */
-		while(!end)
+		while(!end && i < count)
 		{
-			DirEntry *entry = getDirEntry(clusterAddr, entryAddr);
-			if((entry->attr & 0x1) ^ 0x1)
-				end = 1;
-			else
+			entry = getDirEntry(clusterAddr, entryAddr);
+			entryAddr++;
+			if(entry->attr & 0x01)
 			{
 				char fileName[47];
 				char timeStr[20];
@@ -374,13 +370,13 @@ char *getDirectoryListing(char *dirPath)
 				strcat(listing, fileInfo);
 				strcat(listing, "\n");
 			
-				entryAddr++;
 				if(entryAddr % DIR_ENTRIES_PER_CLUSTER == 0)
 				{
 					currentCluster = fileAllocTable[currentCluster];
 					if(currentCluster == 0xffffffff) /* No more entries to check */
 						end = 1;
 				}
+				i++;
 			}
 			free(entry);
 		}
@@ -412,9 +408,8 @@ u_int getDirectoryClusterAddress(u_int currentClusterAddr, char *dirName)
 	while(!found && !end)
 	{
 		entry = getDirEntry(currentClusterAddr, entryAddr);
-		if(!(entry->attr & 0x1))
-			end = 1;
-		else if(entry->attr & 0x10) /* Subdirectory */
+		entryAddr++;
+		if(entry->attr & 0x10) /* Subdirectory */
 		{
 			if(strcmp(entry->fileName, dirName) == 0)
 			{
@@ -422,13 +417,12 @@ u_int getDirectoryClusterAddress(u_int currentClusterAddr, char *dirName)
 				dirClusterAddress = entry->startCluster;
 			}
 		}
-		entryAddr++;
 	
 		if(entryAddr % DIR_ENTRIES_PER_CLUSTER == 0)
 		{
 			nextCluster = fileAllocTable[currentCluster];
 			if(nextCluster == 0xffffffff)
-				nextCluster = addClusterToChain(currentCluster);
+				end = 1;
 			currentCluster = nextCluster;
 		}
 		free(entry);
@@ -517,13 +511,12 @@ u_int getDataStartLoc()
 
 /**
  * Returns the offset (in bytes) from the beginning of the virtual drive
- * to the start of the given directory cluster entry. Returns 0 if the 
- * entry address is invalid.
+ * to the start of the given directory cluster entry.
  *
  * @param  dirCluster The starting cluster address of the directory cluster 
  *                    containing the entry
  * @param  entryAddr  The address of the entry within the directory cluster
- * @return            The drive offset of the given entry in bytes, 0 on error
+ * @return            The drive offset of the given entry in bytes
  */
 u_int getDirEntryLoc(u_int dirCluster, u_int entryAddr)
 {
@@ -549,6 +542,7 @@ u_int getDirEntryLoc(u_int dirCluster, u_int entryAddr)
 			currentCluster = nextCluster;
 		}
 	}
+	assert(loc);
 
 	return loc;
 }

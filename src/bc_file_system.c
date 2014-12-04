@@ -7,10 +7,21 @@
  *  Prof: Kwatny
  *  TAs: Liang and Casey
  *  Date: 2014-12-05
- *  Description: This program was written for use in Linux.
+ *  Description: 
+ *     This file contains the implementation for the file system that
+ *     I have created. My file system has been implemented using a design
+ *     which closely resembles the FAT32 scheme, but with some minor 
+ *     adjustments to account for the fact that a virtual representation
+ *     of a drive is being used.
 */
 
 #include "bc_file_system.h"
+
+/** 
+ * ======================================================================== 
+ * |                       File System Operations                         | 
+ * ======================================================================== 
+ * 
 
 /** 
  * Initializes the file system. If the given virtual drive has 
@@ -61,16 +72,16 @@ void closeFileSystem()
 
 /** 
  * ======================================================================== 
- * |                          Drive Operations                            | 
+ * |                      Virtual Drive Operations                        | 
  * ======================================================================== 
  * 
  *     This section holds all of the operations which can be performed on
  *     the virtual drive. The virtual drive will be represented by a 
- *     pre-made file (one of the four files provided: Drive10MB, 
- *     Drive5MB, Drive3MB, or Drive2MB). The virtual drive's allocation 
- *     unit size, or cluster size (as it will be refered to throughout 
- *     these docs) will be 512 bytes. The layout of the clusters on the 
- *     virtual drive will be as follows (cluster addresses):
+ *     file (one of the four files provided: Drive10MB, Drive5MB, Drive3MB, 
+ *     or Drive2MB). The virtual drive's allocation unit size, or cluster 
+ *     size (as it will be refered to throughout these docs) will be 512 
+ *     bytes. The layout of the clusters on the virtual drive will be as 
+ *     follows (cluster addresses):
  *
  *       -   0: The boot cluster
  *       -   1: The first cluster of the file allocation table
@@ -148,7 +159,7 @@ void formatCluster(u_int clusterAddr)
  *     a size of one cluster (512 bytes). The layout of the data contained 
  *     in the boot record/cluster is as follows:
  *     
- *        (bytes) | value 
+ *        (bytes) | property 
  *       ---------------------------------------------------------------
  *        (0)      | A byte designating the virtual drive as initialized
  *        (1-23)   | A label for the virtual drive

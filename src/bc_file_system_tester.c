@@ -12,14 +12,53 @@
 
 #include "bc_file_system.h"
 
-#define PAUSE 0
+/* Used for toggling the pause between tests */
+#define PAUSE 1
 
+void testRun1();
+void testRun2();
 void printBootClusterInfo();
 void printDirectoryListing(char *dir);
 void pause(int pause);
 
 int main(int argc, char **argv)
 {
+	int input = 0;
+
+	fprintf(stdout, "Constructing a file system\n");
+	fprintf(stdout, "Brett Crawford\n\n");
+	
+	fprintf(stdout, "This program will test the file system I have created.\n\n");
+
+	fprintf(stdout, "Test run 1 will initialize the unused Drive2MB virtual drive and\n");
+	fprintf(stdout, "perform several file creations, directory creations, file reads,\n");
+	fprintf(stdout, "and file writes.\n\n");
+
+	fprintf(stdout, "Test run 2 will reopen the previously initialized Drive2MB and\n");
+	fprintf(stdout, "display the boot record and the contents on the virtual drive.\n\n");
+
+	fprintf(stdout, "Note: Test run 1 should be performed before test run 2.\n\n");
+
+	while(input != 1 && input != 2)
+	{
+		fprintf(stdout, "Please choose the test to perform (1 or 2): ");
+		scanf("%d", &input);
+	}
+
+	if(input == 1)
+		testRun1();
+	else
+		testRun2();
+
+	fprintf(stdout, "\nTest finished. Exiting program.\n");
+
+	return 0;
+}
+
+void testRun1()
+{
+	pause(PAUSE);
+
 	initFileSystem("Drive2MB", "2MB_VDrive");
 
 	if(!virDrive)
@@ -27,7 +66,7 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Error opening drive. Exiting");
 		exit(1);
 	}
-	fprintf(stdout, "VDrive Opened\n");
+	fprintf(stdout, "Virtual drive opened\n");
 
 	printBootClusterInfo();
 
@@ -86,21 +125,21 @@ int main(int argc, char **argv)
 	fprintf(stdout, "Rewinding and reading 69 characters from 'directory1/directory2/directory3/testfile2.txt':\n\n");
 	rewindBC_File(testfile2);
 	char strRead2[70];
-	readFile(strRead2, 0, 69, testfile2);
+	readFile(strRead2, 69, testfile2);
 	strRead2[69] = '\0';
 	printf("%s\n\n", strRead2);
 
 	fprintf(stdout, "Rewinding and reading 645 characters from 'testfile0.txt':\n\n");
 	rewindBC_File(testfile0);
 	char strRead0[646];
-	readFile(strRead0, 0, 645, testfile0);
+	readFile(strRead0, 645, testfile0);
 	strRead0[645] = '\0';
 	printf("%s\n\n", strRead0);
 
 	fprintf(stdout, "Rewinding and reading 2066 characters from 'directory0/testfile1.txt':\n\n");
 	rewindBC_File(testfile1);
 	char strRead1[2067];
-	readFile(strRead1, 0, 2066, testfile1);
+	readFile(strRead1, 2066, testfile1);
 	strRead1[2066] = '\0';
 	printf("%s\n\n", strRead1);
 
@@ -143,8 +182,33 @@ int main(int argc, char **argv)
 	closeFile(testfile2);
 
 	closeFileSystem();
+}
 
-    return 0;
+void testRun2()
+{
+	pause(PAUSE);
+
+	initFileSystem("Drive2MB", "");
+
+	if(!virDrive)
+	{
+		fprintf(stderr, "Error opening drive. Exiting");
+		exit(1);
+	}
+	fprintf(stdout, "Virtual drive opened\n");
+
+	printBootClusterInfo();
+
+	pause(PAUSE);
+
+	fprintf(stdout, "\n");
+	printDirectoryListing("root");
+	printDirectoryListing("directory0");
+	printDirectoryListing("directory1");
+	printDirectoryListing("directory1/directory2");
+	printDirectoryListing("directory1/directory2/directory3");
+
+	pause(PAUSE);
 }
 
 void printBootClusterInfo()

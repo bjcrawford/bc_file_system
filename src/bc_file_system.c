@@ -13,7 +13,7 @@
  *     which closely resembles the FAT32 scheme, but with some minor 
  *     adjustments to account for the fact that a virtual representation
  *     of a drive is being used.
-*/
+ */
 
 #include "bc_file_system.h"
 
@@ -21,7 +21,8 @@
  * ======================================================================== 
  * |                       File System Operations                         | 
  * ======================================================================== 
- * 
+ *
+ */
 
 /** 
  * Initializes the file system. If the given virtual drive has 
@@ -44,8 +45,8 @@ void initFileSystem(char *virDriveName, char *virDriveLabel)
 	char init = getc(virDrive);
 	if(init)
 	{
-		fprintf(stdout, "Drive has previously been initialized.\n");
-		fprintf(stdout, "Loading drive properties.\n");
+		fprintf(stdout, "\nVirtual drive has previously been initialized.\n");
+		fprintf(stdout, "Loading virtual drive properties.\n");
 		bootRecord = calloc(1, sizeof(*bootRecord));
 		readBootRecord();
 		fileAllocTable = (u_int*) calloc(sizeof(u_int), bootRecord->clustersOnDrive);
@@ -53,8 +54,8 @@ void initFileSystem(char *virDriveName, char *virDriveLabel)
 	}
 	else
 	{
-		fprintf(stdout, "Drive has not previously been initialized.\n");
-		fprintf(stdout, "Initializing drive properties.\n");
+		fprintf(stdout, "\nVirtual drive has not previously been initialized.\n");
+		fprintf(stdout, "Initializing virtual drive properties.\n");
 		formatVirDrive();
 		bootRecord = initBootRecord(virDriveLabel);
 		writeBootRecord();
@@ -343,7 +344,7 @@ void findAndSetNextFreeCluster()
 
 /** 
  * ======================================================================== 
- * |                  Directory Entry Operations                          | 
+ * |              Directory Table Entry Operations                        | 
  * ======================================================================== 
  *
  *     The section holds all of the operations which can be performed on
@@ -958,7 +959,7 @@ void setDirEntry(u_int dirCluster, u_int entryAddr, DirEntry *entry)
  * |                      File Struct Operations                          | 
  * ======================================================================== 
  *
- *     This file contains an implementation of a custom file pointer. The 
+ *     This section contains an implementation of a custom file object. The 
  *     properties contained within this struct hold all of the properties 
  *     of the file's directory entry and additionally includes some properties
  *     for keeping a record of the position of the pointer within the file.
@@ -1262,8 +1263,23 @@ void createDirectory(char *dirPath)
 	         directory's attributes accordingly */
 }
 
+/**
+ * Writes a number of bytes from a source into a file. The call will fail
+ * if the length of the write exceeds the file size maximum.
+ *
+ * @param src  A pointer to the data to write
+ * @param len  The number of bytes to write
+ * @param dest A pointer to an open BC_FILE object
+ */
 void writeFile(void *src, u_int len, BC_FILE *dest)
 {
+	/* What if file object is invalid? */
+	if(!dest)
+	{
+		fprintf(stdout, "BC_FILE object is null. Invalid operation.\n");
+		return;
+	}
+
 	u_int lenLeft = len;
 	u_int bytesLeft;
 	DirEntry *entry;
@@ -1319,8 +1335,23 @@ void writeFile(void *src, u_int len, BC_FILE *dest)
 	}
 }
 
-void readFile(void *dest, u_int size, u_int len, BC_FILE *src)
+/**
+ * Reads a number of bytes from a file into a given memory location. The call
+ * will fail if the length of the read exceeds.
+ *
+ * @param dest The buffer to store the data read
+ * @param len  The number of bytes to read
+ * @param src  A pointer to an open BC_FILE object
+ */
+void readFile(void *dest, u_int len, BC_FILE *src)
 {
+	/* What if file object is invalid? */
+	if(!dest)
+	{
+		fprintf(stdout, "BC_FILE object is null. Invalid operation.\n");
+		return;
+	}
+
 	/* If length of read exceeds the remaining length of the file,
 	   set the length of read to the remaining length of the file */
 	if(len > (src->fileSize - src->filePosition))
@@ -1364,31 +1395,46 @@ void readFile(void *dest, u_int size, u_int len, BC_FILE *src)
 	src->filePosition += len;
 }
 
+/**
+ * Closes a file.
+ *
+ * @param file A pointer to an open BC_FILE object
+ */
 void closeFile(BC_FILE *file)
 {
-	destroyBC_File(file);
+	if(file)
+		destroyBC_File(file);
 }
 
+/**
+ * Deletes a file. Removes all traces of a file from the
+ * virtual drive and closes the BC_FILE object.
+ *
+ * @param file A pointer to an open BC_FILE object
+ */
 void deleteFile(BC_FILE *file)
 {
-	/* Zero used clusters and FAT entries*/
-	u_int currentCluster = file->startClusterAddr;
-	u_int nextCluster = fileAllocTable[currentCluster];
-	while(nextCluster != 0xffffffff)
+	if(file)
 	{
+		/* Zero used clusters and FAT entries*/
+		u_int currentCluster = file->startClusterAddr;
+		u_int nextCluster = fileAllocTable[currentCluster];
+		while(nextCluster != 0xffffffff)
+		{
+			formatCluster(currentCluster);
+			fileAllocTable[currentCluster] = 0x00000000;
+			currentCluster = nextCluster;
+			nextCluster = fileAllocTable[currentCluster];
+			bootRecord->freeClusters++;
+		}
 		formatCluster(currentCluster);
 		fileAllocTable[currentCluster] = 0x00000000;
-		currentCluster = nextCluster;
-		nextCluster = fileAllocTable[currentCluster];
 		bootRecord->freeClusters++;
+		findAndSetNextFreeCluster();
+
+		/* Zero directory entry */
+		deleteDirEntry(file->dirClusterAddr, file->dirEntryAddr);
+
+		destroyBC_File(file);
 	}
-	formatCluster(currentCluster);
-	fileAllocTable[currentCluster] = 0x00000000;
-	bootRecord->freeClusters++;
-	findAndSetNextFreeCluster();
-
-	/* Zero directory entry */
-	deleteDirEntry(file->dirClusterAddr, file->dirEntryAddr);
-
-	destroyBC_File(file);
 }

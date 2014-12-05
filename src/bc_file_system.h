@@ -149,7 +149,7 @@ void destroyBC_File(BC_FILE*);
 BC_FILE *openFile(char *filePath);
 void createDirectory(char *dirPath);
 void writeFile(void *src, u_int len, BC_FILE *dest);
-void readFile(void *dest, u_int size, u_int len, BC_FILE *src);
+void readFile(void *dest, u_int len, BC_FILE *src);
 void closeFile(BC_FILE *file);
 void deleteFile(BC_FILE *file);
 
